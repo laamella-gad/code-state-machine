@@ -1,44 +1,20 @@
 package com.laamella.code_state_machine;
 
-import com.laamella.code_state_machine.util.Assert;
 
 /**
- * A state machine transition.
+ * A conditional transition between two states.
  * 
  * @param <T>
+ *            type of state.
  * @param <E>
+ *            type of event.
  */
-public class Transition<T, E> {
-	private final T destinationState;
-	private final T sourceState;
-	private final Precondition<E> precondition;
-	private final Action<E> action;
+public interface Transition<T, E> {
+	Precondition<E> getPrecondition();
 
-	public Transition(final T sourceState, final T destinationState,
-			final Precondition<E> precondition, final Action<E> action) {
-		Assert.notNull(destinationState);
-		Assert.notNull(sourceState);
-		Assert.notNull(precondition);
-		Assert.notNull(action);
-		this.destinationState = destinationState;
-		this.sourceState = sourceState;
-		this.precondition = precondition;
-		this.action = action;
-	}
+	Action<E> getAction();
 
-	public boolean isPreconditionMet(final E event) {
-		return precondition.isMet(event);
-	}
+	T getDestinationState();
 
-	public void executeAction(final E event) {
-		action.execute(event);
-	}
-
-	public final T getDestinationState() {
-		return destinationState;
-	}
-
-	public final T getSourceState() {
-		return sourceState;
-	}
+	T getSourceState();
 }
