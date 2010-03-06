@@ -1,5 +1,21 @@
 package com.laamella.code_state_machine;
 
+import static com.laamella.code_state_machine.GameEvent.COMPLETE;
+import static com.laamella.code_state_machine.GameEvent.DEAD;
+import static com.laamella.code_state_machine.GameEvent.DONE;
+import static com.laamella.code_state_machine.GameEvent.ESCAPE;
+import static com.laamella.code_state_machine.GameEvent.FIRE_A;
+import static com.laamella.code_state_machine.GameEvent.FIRE_B;
+import static com.laamella.code_state_machine.GameEvent.START;
+import static com.laamella.code_state_machine.GameState.CONFIGURATION;
+import static com.laamella.code_state_machine.GameState.EXIT;
+import static com.laamella.code_state_machine.GameState.GAME_OVER;
+import static com.laamella.code_state_machine.GameState.GET_READY;
+import static com.laamella.code_state_machine.GameState.INTRO;
+import static com.laamella.code_state_machine.GameState.LEVEL;
+import static com.laamella.code_state_machine.GameState.LEVEL_FINISH;
+import static com.laamella.code_state_machine.GameState.LOADER;
+import static com.laamella.code_state_machine.GameState.MENU;
 import static org.junit.Assert.fail;
 
 import java.util.Arrays;
@@ -8,15 +24,16 @@ import java.util.Set;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.laamella.code_state_machine.StateMachine.Builder;
 import com.laamella.code_state_machine.util.DotOutput;
 import com.laamella.code_state_machine.util.DslStateMachineBuilder;
 
-import static com.laamella.code_state_machine.GameEvent.*;
-import static com.laamella.code_state_machine.GameState.*;
-
 public class Testje {
+	private static final Logger log = LoggerFactory.getLogger(Testje.class);
+
 	private static class GameMachineBuilder extends
 			DslStateMachineBuilder<GameState, GameEvent> {
 		public GameMachineBuilder(final Builder<GameState, GameEvent> builder) {
@@ -62,7 +79,8 @@ public class Testje {
 	public void before() {
 		final Builder<GameState, GameEvent> builder = new StateMachine.Builder<GameState, GameEvent>();
 		gameMachine = new GameMachineBuilder(builder).buildMachine();
-		System.out.println(new DotOutput(builder).getOutput());
+		log.trace("\n"
+				+ new DotOutput<GameState, GameEvent>(builder).getOutput());
 	}
 
 	@Test
