@@ -108,8 +108,8 @@ public class DslStateMachineBuilder<T, E> {
 	}
 
 	public Precondition<E> is(final E... events) {
-		Assert.notNull(events);
-		Assert.notEmpty(events);
+		assert events != null;
+		assert events.length != 0;
 
 		if (events.length == 1) {
 			final E singleEvent = events[0];

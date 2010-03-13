@@ -20,10 +20,10 @@ public class BasicTransition<T, E> implements Transition<T, E> {
 
 	public BasicTransition(final T sourceState, final T destinationState,
 			final Precondition<E> precondition, final Action<E> action) {
-		Assert.notNull(destinationState);
-		Assert.notNull(sourceState);
-		Assert.notNull(precondition);
-		Assert.notNull(action);
+		assert destinationState != null;
+		assert sourceState != null;
+		assert precondition != null;
+		assert action != null;
 
 		this.destinationState = destinationState;
 		this.sourceState = sourceState;
