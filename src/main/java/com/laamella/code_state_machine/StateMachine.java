@@ -18,8 +18,7 @@ import org.slf4j.LoggerFactory;
  *            event type
  */
 public class StateMachine<T, E> {
-	private static final Logger log = LoggerFactory
-			.getLogger(StateMachine.class);
+	private static final Logger log = LoggerFactory.getLogger(StateMachine.class);
 
 	private final Set<T> startStates = new HashSet<T>();
 	private final Set<T> endStates = new HashSet<T>();
@@ -130,36 +129,26 @@ public class StateMachine<T, E> {
 			machine = new StateMachine<T, E>();
 		}
 
-		/**
-		 * {@inheritDoc}
-		 */
+		@Override
 		public Set<T> getEndStates() {
 			return new HashSet<T>(machine.endStates);
 		}
 
-		/**
-		 * {@inheritDoc}
-		 */
+		@Override
 		public Set<T> getStartStates() {
 			return new HashSet<T>(machine.startStates);
 		}
 
-		/**
-		 * {@inheritDoc}
-		 */
+		@Override
 		public Set<T> getSourceStates() {
 			return new HashSet<T>(machine.transitions.keySet());
 		}
 
-		/**
-		 * {@inheritDoc}
-		 */
-		public Set<Transition<T, E>> getTransitionsForSourceState(
-				final T sourceState) {
+		@Override
+		public Set<Transition<T, E>> getTransitionsForSourceState(final T sourceState) {
 			final Set<Transition<T, E>> transitions = new HashSet<Transition<T, E>>();
 			if (machine.transitions.containsKey(sourceState)) {
-				for (final Transition<T, E> transition : machine.transitions
-						.get(sourceState)) {
+				for (final Transition<T, E> transition : machine.transitions.get(sourceState)) {
 					transitions.add(transition);
 				}
 			}
@@ -167,59 +156,43 @@ public class StateMachine<T, E> {
 
 		}
 
-		/**
-		 * {@inheritDoc}
-		 */
+		@Override
 		public void setExitAction(final T state, final Action<E> action) {
 			log.debug("Create exit action for {} ({}) ", state, action);
 			machine.exitEvents.put(state, action);
 		}
 
-		/**
-		 * {@inheritDoc}
-		 */
+		@Override
 		public void setEntryAction(final T state, final Action<E> action) {
 			log.debug("Create entry action for {} ({}) ", state, action);
 			machine.entryEvents.put(state, action);
 		}
 
-		/**
-		 * {@inheritDoc}
-		 */
+		@Override
 		public void addEndState(final T endState) {
 			log.debug("Add end state {}", endState);
 			machine.endStates.add(endState);
 		}
 
-		/**
-		 * {@inheritDoc}
-		 */
+		@Override
 		public void addTransition(final Transition<T, E> transition) {
 			final T sourceState = transition.getSourceState();
 			log.debug("Create transition from {} to {} (pre: {}, action: {})",
-					new Object[] { sourceState,
-							transition.getDestinationState(),
-							transition.getPrecondition(),
+					new Object[] { sourceState, transition.getDestinationState(), transition.getPrecondition(),
 							transition.getAction() });
 			if (!machine.transitions.containsKey(sourceState)) {
-				machine.transitions.put(sourceState,
-						new HashSet<Transition<T, E>>());
+				machine.transitions.put(sourceState, new HashSet<Transition<T, E>>());
 			}
 			machine.transitions.get(sourceState).add(transition);
 		}
 
-		/**
-		 * {@inheritDoc}
-		 */
+		@Override
 		public StateMachine<T, E> build() {
 			log.debug("Done building new machine");
 			machine.reset();
 			return machine;
 		}
 
-		/**
-		 * {@inheritDoc}
-		 */
 		@Override
 		public void addStartState(final T startState) {
 			log.debug("Add start state {}", startState);

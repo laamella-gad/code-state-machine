@@ -1,6 +1,5 @@
 package com.laamella.code_state_machine;
 
-
 /**
  * A conditional transition between two states.
  * 

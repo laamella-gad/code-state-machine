@@ -31,8 +31,8 @@ import com.laamella.code_state_machine.StateMachine.Builder;
 import com.laamella.code_state_machine.util.DotOutput;
 import com.laamella.code_state_machine.util.DslStateMachineBuilder;
 
-public class Testje {
-	private static final Logger log = LoggerFactory.getLogger(Testje.class);
+public class Tests {
+	private static final Logger log = LoggerFactory.getLogger(Tests.class);
 
 	private static class GameMachineBuilder extends
 			DslStateMachineBuilder<GameState, GameEvent> {
