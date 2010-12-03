@@ -1,6 +1,3 @@
-/**
- * 
- */
 package com.laamella.code_state_machine.util;
 
 import java.util.Arrays;
@@ -9,6 +6,10 @@ import java.util.Set;
 
 import com.laamella.code_state_machine.Precondition;
 
+/**
+ * This precondition is met when the event is equal to one of the events passed
+ * in the constructor.
+ */
 public final class MultiEventMatchPrecondition<T, E> implements Precondition<E> {
 	private final Set<E> matchEvents;
 

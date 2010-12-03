@@ -1,10 +1,10 @@
-/**
- * 
- */
 package com.laamella.code_state_machine.util;
 
 import com.laamella.code_state_machine.Action;
 
+/**
+ * This action does nothing.
+ */
 public final class NoAction<T, E> implements Action<E> {
 	@Override
 	public void execute(final E event) {

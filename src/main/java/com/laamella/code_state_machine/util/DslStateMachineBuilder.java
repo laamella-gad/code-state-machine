@@ -10,22 +10,19 @@ import org.slf4j.LoggerFactory;
 import com.laamella.code_state_machine.Action;
 import com.laamella.code_state_machine.Precondition;
 import com.laamella.code_state_machine.StateMachine;
-import com.laamella.code_state_machine.StateMachineBuilder;
 
+/**
+ * A pretty "DSL" builder for a state machine.
+ */
 public class DslStateMachineBuilder<T, E> {
-	private static final Logger log = LoggerFactory
-			.getLogger(StateMachine.class);
+	private static final Logger log = LoggerFactory.getLogger(StateMachine.class);
 
 	private Set<T> sourceStates = new HashSet<T>();
-
 	private Precondition<E> storedPrecondition;
-
 	private Action<E> storedAction;
+	private final StateMachine.Builder<T, E> builder = new StateMachine.Builder<T, E>();
 
-	private final StateMachineBuilder<T, E> builder;
-
-	public DslStateMachineBuilder(final StateMachine.Builder<T, E> builder) {
-		this.builder = builder;
+	public DslStateMachineBuilder() {
 		resetStoredTransitionVariables();
 	}
 
@@ -65,11 +62,10 @@ public class DslStateMachineBuilder<T, E> {
 		return this;
 	}
 
-	public DslStateMachineBuilder<T, E> transition(final T destinationState,
-			final Precondition<E> precondition, final Action<E> action) {
+	public DslStateMachineBuilder<T, E> transition(final T destinationState, final Precondition<E> precondition,
+			final Action<E> action) {
 		for (final T sourceState : sourceStates) {
-			builder.addTransition(new BasicTransition<T, E>(sourceState,
-					destinationState, precondition, action));
+			builder.addTransition(new BasicTransition<T, E>(sourceState, destinationState, precondition, action));
 		}
 		resetStoredTransitionVariables();
 		return this;

@@ -1,13 +1,16 @@
 package com.laamella.code_state_machine.util;
 
+import com.laamella.code_state_machine.StateMachine;
 import com.laamella.code_state_machine.Transition;
-import com.laamella.code_state_machine.StateMachine.Builder;
 
+/**
+ * Creates a "dot" diagram of the state machine.
+ */
 public class DotOutput<T, E> {
-	private final Builder<T, E> builder;
+	private final StateMachine<T, E>.MetaInformation metaInformation;
 
-	public DotOutput(final Builder<T, E> builder) {
-		this.builder = builder;
+	public DotOutput(final StateMachine<T, E>.MetaInformation metaInformation) {
+		this.metaInformation = metaInformation;
 	}
 
 	public String getOutput() {
@@ -16,19 +19,16 @@ public class DotOutput<T, E> {
 		output.append("\trankdir=LR;\n");
 		output.append("\tsize=\"8,5\"\n");
 		output.append("\tnode [shape = doublecircle];");
-		for (final T startState : builder.getStartStates()) {
+		for (final T startState : metaInformation.getStartStates()) {
 			output.append(" " + startState);
 		}
 		output.append(";\n");
 		output.append("\tnode [shape = circle];\n");
-		for (final T sourceState : builder.getSourceStates()) {
-			for (final Transition<T, E> transition : builder
-					.getTransitionsForSourceState(sourceState)) {
-				output.append("\t" + sourceState + " -> "
-						+ transition.getDestinationState());
+		for (final T sourceState : metaInformation.getSourceStates()) {
+			for (final Transition<T, E> transition : metaInformation.getTransitionsForSourceState(sourceState)) {
+				output.append("\t" + sourceState + " -> " + transition.getDestinationState());
 
-				output.append(" [ label = \"" + transition.getPrecondition()
-						+ "\" ]");
+				output.append(" [ label = \"" + transition.getPrecondition() + "\" ]");
 
 				output.append(";\n");
 			}

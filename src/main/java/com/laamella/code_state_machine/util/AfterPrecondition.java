@@ -1,10 +1,10 @@
-/**
- * 
- */
 package com.laamella.code_state_machine.util;
 
 import com.laamella.code_state_machine.Precondition;
 
+/**
+ * This precondition is met after a certain amount of milliseconds.
+ */
 public final class AfterPrecondition<T, E> implements Precondition<E> {
 	private final long milliseconds;
 	private long minimalMeetTime;

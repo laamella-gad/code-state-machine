@@ -27,17 +27,14 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.laamella.code_state_machine.StateMachine.Builder;
 import com.laamella.code_state_machine.util.DotOutput;
 import com.laamella.code_state_machine.util.DslStateMachineBuilder;
 
 public class Tests {
 	private static final Logger log = LoggerFactory.getLogger(Tests.class);
 
-	private static class GameMachineBuilder extends
-			DslStateMachineBuilder<GameState, GameEvent> {
-		public GameMachineBuilder(final Builder<GameState, GameEvent> builder) {
-			super(builder);
+	private static class GameMachineBuilder extends DslStateMachineBuilder<GameState, GameEvent> {
+		public GameMachineBuilder() {
 			state(LOADER).onExit(new Action<GameEvent>() {
 				@Override
 				public void execute(final GameEvent event) {
@@ -58,11 +55,9 @@ public class Tests {
 			state(MENU).when(START).then(GET_READY).when(ESCAPE).then(EXIT);
 			state(GET_READY).when(DONE).then(LEVEL);
 			state(LEVEL_FINISH).when(DONE).then(GET_READY);
-			state(LEVEL).when(DEAD).then(GAME_OVER).when(COMPLETE).then(
-					LEVEL_FINISH);
+			state(LEVEL).when(DEAD).then(GAME_OVER).when(COMPLETE).then(LEVEL_FINISH);
 			state(GAME_OVER).when(DONE).then(MENU);
-			states(GameState.values()).except(MENU, LOADER, EXIT).when(ESCAPE)
-					.then(MENU);
+			states(GameState.values()).except(MENU, LOADER, EXIT).when(ESCAPE).then(MENU);
 
 			state(MENU).when(FIRE_A, FIRE_B).then(CONFIGURATION);
 			state(CONFIGURATION).when(FIRE_A, FIRE_B).then(MENU);
@@ -77,10 +72,8 @@ public class Tests {
 
 	@Before
 	public void before() {
-		final Builder<GameState, GameEvent> builder = new StateMachine.Builder<GameState, GameEvent>();
-		gameMachine = new GameMachineBuilder(builder).buildMachine();
-		log.trace("\n"
-				+ new DotOutput<GameState, GameEvent>(builder).getOutput());
+		gameMachine = new GameMachineBuilder().buildMachine();
+		log.trace("\n" + new DotOutput<GameState, GameEvent>(gameMachine.getMetaInformation()).getOutput());
 	}
 
 	@Test
@@ -130,15 +123,13 @@ public class Tests {
 		assertActive(gameMachine, GameState.LOADER);
 	}
 
-	private static <T extends Enum<?>, E> void assertActive(
-			final StateMachine<T, E> machine, final T... expectedStates) {
+	private static <T extends Enum<?>, E> void assertActive(final StateMachine<T, E> machine, final T... expectedStates) {
 		for (final T expectedState : expectedStates) {
 			if (!machine.isActive(expectedState)) {
 				fail("Expected " + expectedState + " to be active.");
 			}
 		}
-		final Set<T> expectedStatesSet = new HashSet<T>(Arrays
-				.asList(expectedStates));
+		final Set<T> expectedStatesSet = new HashSet<T>(Arrays.asList(expectedStates));
 		for (final T actualState : machine.getActiveStates()) {
 			if (!expectedStatesSet.contains(actualState)) {
 				fail("" + actualState + " was active, but not expected.");

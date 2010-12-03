@@ -6,11 +6,6 @@ import com.laamella.code_state_machine.Transition;
 
 /**
  * A basic implementation of a state machine transition.
- * 
- * @param <T>
- *            the state type.
- * @param <E>
- *            the event type.
  */
 public class BasicTransition<T, E> implements Transition<T, E> {
 	private final T destinationState;

@@ -1,6 +1,3 @@
-/**
- * 
- */
 package com.laamella.code_state_machine;
 
 enum GameEvent {
