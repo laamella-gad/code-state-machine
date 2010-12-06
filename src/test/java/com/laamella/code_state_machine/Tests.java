@@ -37,17 +37,17 @@ public class Tests {
 		public GameMachineBuilder() {
 			state(LOADER).onExit(new Action<GameEvent>() {
 				@Override
-				public void execute(final GameEvent event) {
+				public void execute() {
 				}
 			}).onEntry(new Action<GameEvent>() {
 				@Override
-				public void execute(final GameEvent event) {
+				public void execute() {
 				}
 			});
 
 			final Action<GameEvent> bing = new Action<GameEvent>() {
 				@Override
-				public void execute(final GameEvent event) {
+				public void execute() {
 				}
 			};
 			state(LOADER).isStartState().when(DONE).action(bing).then(INTRO);

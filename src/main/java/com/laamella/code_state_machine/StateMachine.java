@@ -55,7 +55,7 @@ public class StateMachine<T, E> {
 		log.debug("reset()");
 		activeStates.clear();
 		for (final T startState : startStates) {
-			enterState(startState, null);
+			enterState(startState);
 		}
 	}
 
@@ -72,6 +72,15 @@ public class StateMachine<T, E> {
 	 */
 	public boolean isActive(final T state) {
 		return activeStates.contains(state);
+	}
+
+	public void handleEvent(final E event) {
+		for (final T sourceState : activeStates) {
+			for (final Transition<T, E> transition : findTransitionsForState(sourceState)) {
+				transition.getPrecondition().handleEvent(event);
+			}
+		}
+		poll();
 	}
 
 	/**
@@ -93,7 +102,7 @@ public class StateMachine<T, E> {
 	 * @param event
 	 *            the event that has occurred.
 	 */
-	public void handleEvent(final E event) {
+	public void poll() {
 		// FIXME fire all automatic transitions
 		final Set<T> statesToExit = new HashSet<T>();
 		final Set<Transition<T, E>> transitionsToExecute = new HashSet<Transition<T, E>>();
@@ -102,7 +111,6 @@ public class StateMachine<T, E> {
 		for (final T sourceState : activeStates) {
 			for (final Transition<T, E> transition : findTransitionsForState(sourceState)) {
 				final Precondition<E> precondition = transition.getPrecondition();
-				precondition.handleEvent(event);
 				if (precondition.isMet()) {
 					statesToExit.add(sourceState);
 					transitionsToExecute.add(transition);
@@ -111,36 +119,36 @@ public class StateMachine<T, E> {
 			}
 		}
 		for (final T stateToExit : statesToExit) {
-			exitState(stateToExit, event);
+			exitState(stateToExit);
 		}
 		for (final Transition<T, E> transitionToExecute : transitionsToExecute) {
-			transitionToExecute.getAction().execute(event);
+			transitionToExecute.getAction().execute();
 		}
 		for (final T stateToEnter : statesToEnter) {
-			enterState(stateToEnter, event);
+			enterState(stateToEnter);
 		}
 	}
 
-	private void exitState(final T state, final E event) {
-		log.debug("exit state {} ({})", state, event);
+	private void exitState(final T state) {
+		log.debug("exit state {}", state);
 		if (activeStates.contains(state)) {
-			executeExitAction(state, event);
+			executeExitAction(state);
 			activeStates.remove(state);
 		}
 	}
 
-	private void enterState(final T newState, final E event) {
+	private void enterState(final T newState) {
 		if (endStates.contains(newState)) {
-			log.debug("enter end state {} ({})", newState, event);
-			executeEntryAction(newState, event);
+			log.debug("enter end state {}", newState);
+			executeEntryAction(newState);
 			if (activeStates.size() == 0) {
 				log.debug("machine is finished");
 			}
 			return;
 		}
 		if (activeStates.add(newState)) {
-			log.debug("enter state {} ({})", newState, event);
-			executeEntryAction(newState, event);
+			log.debug("enter state {}", newState);
+			executeEntryAction(newState);
 			resetTransitions(newState);
 		}
 	}
@@ -155,17 +163,17 @@ public class StateMachine<T, E> {
 		return transitions.get(sourceState);
 	}
 
-	private void executeExitAction(final T state, final E event) {
+	private void executeExitAction(final T state) {
 		final Action<E> action = exitEvents.get(state);
 		if (action != null) {
-			action.execute(event);
+			action.execute();
 		}
 	}
 
-	private void executeEntryAction(final T state, final E event) {
+	private void executeEntryAction(final T state) {
 		final Action<E> action = entryEvents.get(state);
 		if (action != null) {
-			action.execute(event);
+			action.execute();
 		}
 	}
 

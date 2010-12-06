@@ -9,10 +9,7 @@ package com.laamella.code_state_machine;
  */
 public interface Action<E> {
 	/**
-	 * 
-	 * @param event
-	 *            the event that triggered this action. Can be null when it is
-	 *            the action on entry of a start state.
+	 * User code.
 	 */
-	void execute(E event);
+	void execute();
 }
