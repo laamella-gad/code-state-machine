@@ -5,7 +5,7 @@ import com.laamella.code_state_machine.Action;
 /**
  * This action does nothing.
  */
-public final class NoAction<E> implements Action<E> {
+public final class NoAction implements Action {
 	@Override
 	public void execute() {
 	}

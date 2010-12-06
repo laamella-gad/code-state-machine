@@ -19,7 +19,7 @@ public class DslStateMachineBuilder<T, E> {
 
 	private Set<T> sourceStates = new HashSet<T>();
 	private Precondition<E> storedPrecondition;
-	private Action<E> storedAction;
+	private Action storedAction;
 	private final StateMachine.Builder<T, E> builder = new StateMachine.Builder<T, E>();
 
 	public DslStateMachineBuilder() {
@@ -47,14 +47,14 @@ public class DslStateMachineBuilder<T, E> {
 		return this;
 	}
 
-	public DslStateMachineBuilder<T, E> onExit(final Action<E> action) {
+	public DslStateMachineBuilder<T, E> onExit(final Action action) {
 		for (final T sourceState : sourceStates) {
 			builder.setExitAction(sourceState, action);
 		}
 		return this;
 	}
 
-	public DslStateMachineBuilder<T, E> onEntry(final Action<E> action) {
+	public DslStateMachineBuilder<T, E> onEntry(final Action action) {
 		for (final T sourceState : sourceStates) {
 			log.debug("Create entry action for {} ({})", sourceState, action);
 			builder.setEntryAction(sourceState, action);
@@ -63,7 +63,7 @@ public class DslStateMachineBuilder<T, E> {
 	}
 
 	public DslStateMachineBuilder<T, E> transition(final T destinationState, final Precondition<E> precondition,
-			final Action<E> action) {
+			final Action action) {
 		for (final T sourceState : sourceStates) {
 			builder.addTransition(new BasicTransition<T, E>(sourceState, destinationState, precondition, action));
 		}
@@ -86,7 +86,7 @@ public class DslStateMachineBuilder<T, E> {
 		return this;
 	}
 
-	public DslStateMachineBuilder<T, E> action(final Action<E> action) {
+	public DslStateMachineBuilder<T, E> action(final Action action) {
 		storedAction = action;
 		return this;
 	}
@@ -115,8 +115,8 @@ public class DslStateMachineBuilder<T, E> {
 		return new MultiEventMatchPrecondition<E>(events);
 	}
 
-	public Action<E> nothing() {
-		return new NoAction<E>();
+	public Action nothing() {
+		return new NoAction();
 	}
 
 	public DslStateMachineBuilder<T, E> isEndState() {

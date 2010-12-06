@@ -35,17 +35,17 @@ public class Tests {
 
 	private static class GameMachineBuilder extends DslStateMachineBuilder<GameState, GameEvent> {
 		public GameMachineBuilder() {
-			state(LOADER).onExit(new Action<GameEvent>() {
+			state(LOADER).onExit(new Action() {
 				@Override
 				public void execute() {
 				}
-			}).onEntry(new Action<GameEvent>() {
+			}).onEntry(new Action() {
 				@Override
 				public void execute() {
 				}
 			});
 
-			final Action<GameEvent> bing = new Action<GameEvent>() {
+			final Action bing = new Action() {
 				@Override
 				public void execute() {
 				}

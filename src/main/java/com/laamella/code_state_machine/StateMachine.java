@@ -37,8 +37,8 @@ public class StateMachine<T, E> {
 	private final Set<T> startStates = new HashSet<T>();
 	private final Set<T> endStates = new HashSet<T>();
 	private final Set<T> activeStates = new HashSet<T>();
-	private final Map<T, Action<E>> exitEvents = new HashMap<T, Action<E>>();
-	private final Map<T, Action<E>> entryEvents = new HashMap<T, Action<E>>();
+	private final Map<T, Action> exitEvents = new HashMap<T, Action>();
+	private final Map<T, Action> entryEvents = new HashMap<T, Action>();
 	private final Map<T, Set<Transition<T, E>>> transitions = new HashMap<T, Set<Transition<T, E>>>();
 
 	/**
@@ -164,14 +164,14 @@ public class StateMachine<T, E> {
 	}
 
 	private void executeExitAction(final T state) {
-		final Action<E> action = exitEvents.get(state);
+		final Action action = exitEvents.get(state);
 		if (action != null) {
 			action.execute();
 		}
 	}
 
 	private void executeEntryAction(final T state) {
-		final Action<E> action = entryEvents.get(state);
+		final Action action = entryEvents.get(state);
 		if (action != null) {
 			action.execute();
 		}
@@ -225,12 +225,12 @@ public class StateMachine<T, E> {
 			return machine.getMetaInformation();
 		}
 
-		public void setExitAction(final T state, final Action<E> action) {
+		public void setExitAction(final T state, final Action action) {
 			log.debug("Create exit action for {} ({}) ", state, action);
 			machine.exitEvents.put(state, action);
 		}
 
-		public void setEntryAction(final T state, final Action<E> action) {
+		public void setEntryAction(final T state, final Action action) {
 			log.debug("Create entry action for {} ({}) ", state, action);
 			machine.entryEvents.put(state, action);
 		}

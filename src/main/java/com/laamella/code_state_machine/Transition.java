@@ -11,7 +11,7 @@ package com.laamella.code_state_machine;
 public interface Transition<T, E> {
 	Precondition<E> getPrecondition();
 
-	Action<E> getAction();
+	Action getAction();
 
 	T getDestinationState();
 
