@@ -4,22 +4,15 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
-import com.laamella.code_state_machine.Precondition;
-
 /**
  * This precondition is met when the event is equal to one of the events passed
  * in the constructor.
  */
-public final class MultiEventMatchPrecondition<T, E> implements Precondition<E> {
+public final class MultiEventMatchPrecondition<E> extends EventBasedPrecondition<E> {
 	private final Set<E> matchEvents;
 
 	public MultiEventMatchPrecondition(final E[] events) {
 		matchEvents = new HashSet<E>(Arrays.asList(events));
-	}
-
-	@Override
-	public boolean isMet(final E event) {
-		return matchEvents.contains(event);
 	}
 
 	@Override
@@ -32,6 +25,7 @@ public final class MultiEventMatchPrecondition<T, E> implements Precondition<E> 
 	}
 
 	@Override
-	public void reset() {
+	protected boolean preconditionIsMetAfterHandlingEvent(final E event) {
+		return matchEvents.contains(event);
 	}
 }

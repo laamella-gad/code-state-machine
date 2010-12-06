@@ -1,13 +1,11 @@
 package com.laamella.code_state_machine.util;
 
-import com.laamella.code_state_machine.Precondition;
-
 /**
  * This precondition is always met.
  */
-public final class AlwaysPrecondition<T, E> implements Precondition<E> {
+public final class AlwaysPrecondition<E> extends NonEventBasedPrecondition<E> {
 	@Override
-	public boolean isMet(final E event) {
+	public boolean isMet() {
 		return true;
 	}
 

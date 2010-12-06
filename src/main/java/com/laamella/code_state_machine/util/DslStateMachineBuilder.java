@@ -96,7 +96,7 @@ public class DslStateMachineBuilder<T, E> {
 	}
 
 	public Precondition<E> always() {
-		return new AlwaysPrecondition<T, E>();
+		return new AlwaysPrecondition<E>();
 	}
 
 	public Precondition<E> after(final long milliseconds) {
@@ -109,14 +109,14 @@ public class DslStateMachineBuilder<T, E> {
 
 		if (events.length == 1) {
 			final E singleEvent = events[0];
-			return new SingleEventMatchPrecondition<T, E>(singleEvent);
+			return new SingleEventMatchPrecondition<E>(singleEvent);
 		}
 
-		return new MultiEventMatchPrecondition<T, E>(events);
+		return new MultiEventMatchPrecondition<E>(events);
 	}
 
 	public Action<E> nothing() {
-		return new NoAction<T, E>();
+		return new NoAction<E>();
 	}
 
 	public DslStateMachineBuilder<T, E> isEndState() {

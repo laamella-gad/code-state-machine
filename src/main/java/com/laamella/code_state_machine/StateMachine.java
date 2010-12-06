@@ -33,6 +33,7 @@ import org.slf4j.LoggerFactory;
 public class StateMachine<T, E> {
 	private static final Logger log = LoggerFactory.getLogger(StateMachine.class);
 
+	// TODO add global override transitions.
 	private final Set<T> startStates = new HashSet<T>();
 	private final Set<T> endStates = new HashSet<T>();
 	private final Set<T> activeStates = new HashSet<T>();
@@ -93,13 +94,16 @@ public class StateMachine<T, E> {
 	 *            the event that has occurred.
 	 */
 	public void handleEvent(final E event) {
+		// FIXME fire all automatic transitions
 		final Set<T> statesToExit = new HashSet<T>();
 		final Set<Transition<T, E>> transitionsToExecute = new HashSet<Transition<T, E>>();
 		final Set<T> statesToEnter = new HashSet<T>();
 
 		for (final T sourceState : activeStates) {
 			for (final Transition<T, E> transition : findTransitionsForState(sourceState)) {
-				if (transition.getPrecondition().isMet(event)) {
+				final Precondition<E> precondition = transition.getPrecondition();
+				precondition.handleEvent(event);
+				if (precondition.isMet()) {
 					statesToExit.add(sourceState);
 					transitionsToExecute.add(transition);
 					statesToEnter.add(transition.getDestinationState());
