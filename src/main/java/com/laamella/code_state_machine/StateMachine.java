@@ -53,6 +53,9 @@ public class StateMachine<T, E> {
 	 */
 	public void reset() {
 		log.debug("reset()");
+		if (startStates.size() == 0) {
+			log.warn("State machine does not contain any start states.");
+		}
 		activeStates.clear();
 		for (final T startState : startStates) {
 			enterState(startState);
@@ -74,7 +77,17 @@ public class StateMachine<T, E> {
 		return activeStates.contains(state);
 	}
 
+	/**
+	 * Handle an event coming from the user application. After sending the event
+	 * to all transitions that have an active source state, poll() will be
+	 * called.
+	 * 
+	 * @param event
+	 *            some event that has happened.
+	 */
 	public void handleEvent(final E event) {
+		log.debug("handle event {}", event);
+
 		for (final T sourceState : activeStates) {
 			for (final Transition<T, E> transition : findTransitionsForState(sourceState)) {
 				transition.getPrecondition().handleEvent(event);
@@ -84,14 +97,16 @@ public class StateMachine<T, E> {
 	}
 
 	/**
-	 * Handle an event coming from the user application. The following happens:
+	 * Repeat...
 	 * <ol>
-	 * <li>For all applicable transitions, find the transitions that will fire
-	 * for the supplied event.</li>
+	 * <li>For all transitions that have an active source state, find the
+	 * transitions that will fire for the supplied event. Ignore transitions
+	 * that have already fired in this poll().</li>
 	 * <li>For all states that will be exited, fire the exit state event.</li>
 	 * <li>For all transitions that fire, fire the transition action.</li>
 	 * <li>For all states that will be entered, fire the entry state event.</li>
 	 * </ol>
+	 * ... until no transitions have fired.
 	 * <p>
 	 * If multiple transitions can fire for a single source state, there is no
 	 * selection step as is usually the case in state machines. The state
@@ -103,30 +118,39 @@ public class StateMachine<T, E> {
 	 *            the event that has occurred.
 	 */
 	public void poll() {
-		// FIXME fire all automatic transitions
-		final Set<T> statesToExit = new HashSet<T>();
-		final Set<Transition<T, E>> transitionsToExecute = new HashSet<Transition<T, E>>();
-		final Set<T> statesToEnter = new HashSet<T>();
+		boolean stillNewTransitionsFiring = true;
+		final Set<Transition<T, E>> transitionsThatHaveFiredBefore = new HashSet<Transition<T, E>>();
 
-		for (final T sourceState : activeStates) {
-			for (final Transition<T, E> transition : findTransitionsForState(sourceState)) {
-				final Precondition<E> precondition = transition.getPrecondition();
-				if (precondition.isMet()) {
-					statesToExit.add(sourceState);
-					transitionsToExecute.add(transition);
-					statesToEnter.add(transition.getDestinationState());
+		do {
+			stillNewTransitionsFiring = false;
+			final Set<T> statesToExit = new HashSet<T>();
+			final Set<Transition<T, E>> transitionsToFire = new HashSet<Transition<T, E>>();
+			final Set<T> statesToEnter = new HashSet<T>();
+
+			for (final T sourceState : activeStates) {
+				for (final Transition<T, E> transition : findTransitionsForState(sourceState)) {
+					if (!transitionsThatHaveFiredBefore.contains(transition)) {
+						if (transition.getPrecondition().isMet()) {
+							statesToExit.add(sourceState);
+							transitionsToFire.add(transition);
+							statesToEnter.add(transition.getDestinationState());
+						}
+					}
 				}
 			}
-		}
-		for (final T stateToExit : statesToExit) {
-			exitState(stateToExit);
-		}
-		for (final Transition<T, E> transitionToExecute : transitionsToExecute) {
-			transitionToExecute.getAction().execute();
-		}
-		for (final T stateToEnter : statesToEnter) {
-			enterState(stateToEnter);
-		}
+			for (final T stateToExit : statesToExit) {
+				exitState(stateToExit);
+			}
+			for (final Transition<T, E> transitionToFire : transitionsToFire) {
+				transitionToFire.getAction().execute();
+				transitionsThatHaveFiredBefore.add(transitionToFire);
+				stillNewTransitionsFiring = true;
+			}
+			for (final T stateToEnter : statesToEnter) {
+				enterState(stateToEnter);
+			}
+
+		} while (stillNewTransitionsFiring);
 	}
 
 	private void exitState(final T state) {
@@ -199,6 +223,7 @@ public class StateMachine<T, E> {
 		}
 
 		public Set<Transition<T, E>> getTransitionsForSourceState(final T sourceState) {
+			// FIXME
 			final Set<Transition<T, E>> transitions = new HashSet<Transition<T, E>>();
 			if (StateMachine.this.transitions.containsKey(sourceState)) {
 				for (final Transition<T, E> transition : StateMachine.this.transitions.get(sourceState)) {
@@ -262,5 +287,13 @@ public class StateMachine<T, E> {
 			machine.startStates.add(startState);
 		}
 
+	}
+
+	/**
+	 * @return whether no states are active. Either by all active states having
+	 *         disappeared into end states, or by having no start states at all.
+	 */
+	public boolean isFinished() {
+		return activeStates.size() == 0;
 	}
 }

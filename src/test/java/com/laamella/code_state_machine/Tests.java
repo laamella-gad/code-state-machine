@@ -91,7 +91,6 @@ public class Tests {
 		assertActive(gameMachine, LEVEL, GET_READY);
 		gameMachine.handleEvent(DONE);
 		assertActive(gameMachine, LEVEL);
-
 	}
 
 	@Test
