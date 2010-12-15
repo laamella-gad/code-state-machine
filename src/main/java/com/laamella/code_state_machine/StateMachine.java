@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,7 +21,7 @@ import org.slf4j.LoggerFactory;
  * <li>Each state can have one entry and one exit state</li>
  * <li>Each transition can have one action</li>
  * <li>It does not do any kind of compilation</li>
- * <li>It's code is easy to understand</li>
+ * <li>Its code is easy to understand</li>
  * </ul>
  * 
  * @param <T>
@@ -29,17 +30,21 @@ import org.slf4j.LoggerFactory;
  * @param <E>
  *            Event type. Events come into the state machine from the outside
  *            world, and are used to trigger state transitions.
+ * @param <P>
+ *            Priority type. Will be used to give priorities to transitions.
  */
-public class StateMachine<T, E> {
+// TODO priorities
+public class StateMachine<T, E, P extends Comparable<P>> {
 	private static final Logger log = LoggerFactory.getLogger(StateMachine.class);
 
-	// TODO add global override transitions.
 	private final Set<T> startStates = new HashSet<T>();
 	private final Set<T> endStates = new HashSet<T>();
 	private final Set<T> activeStates = new HashSet<T>();
+	// TODO support a list of exit events
 	private final Map<T, Action> exitEvents = new HashMap<T, Action>();
+	// TODO support a list of entry events
 	private final Map<T, Action> entryEvents = new HashMap<T, Action>();
-	private final Map<T, Set<Transition<T, E>>> transitions = new HashMap<T, Set<Transition<T, E>>>();
+	private final Map<T, Set<Transition<T, E, P>>> transitions = new HashMap<T, Set<Transition<T, E, P>>>();
 
 	/**
 	 * This class can only be created through its builder.
@@ -78,6 +83,15 @@ public class StateMachine<T, E> {
 	}
 
 	/**
+	 * @return whether no states are active. Can be caused by all active states
+	 *         having disappeared into end states, or by having no start states
+	 *         at all.
+	 */
+	public boolean isFinished() {
+		return activeStates.size() == 0;
+	}
+
+	/**
 	 * Handle an event coming from the user application. After sending the event
 	 * to all transitions that have an active source state, poll() will be
 	 * called.
@@ -89,7 +103,7 @@ public class StateMachine<T, E> {
 		log.debug("handle event {}", event);
 
 		for (final T sourceState : activeStates) {
-			for (final Transition<T, E> transition : findTransitionsForState(sourceState)) {
+			for (final Transition<T, E, P> transition : findTransitionsForState(sourceState)) {
 				transition.getPrecondition().handleEvent(event);
 			}
 		}
@@ -113,35 +127,40 @@ public class StateMachine<T, E> {
 	 * machine will simply fire all of the transitions, creating multiple new
 	 * states.
 	 * </p>
-	 * 
-	 * @param event
-	 *            the event that has occurred.
 	 */
 	public void poll() {
 		boolean stillNewTransitionsFiring = true;
-		final Set<Transition<T, E>> transitionsThatHaveFiredBefore = new HashSet<Transition<T, E>>();
+		final Set<Transition<T, E, P>> transitionsThatHaveFiredBefore = new HashSet<Transition<T, E, P>>();
 
 		do {
 			stillNewTransitionsFiring = false;
 			final Set<T> statesToExit = new HashSet<T>();
-			final Set<Transition<T, E>> transitionsToFire = new HashSet<Transition<T, E>>();
+			final Set<Transition<T, E, P>> transitionsToFire = new HashSet<Transition<T, E, P>>();
 			final Set<T> statesToEnter = new HashSet<T>();
 
 			for (final T sourceState : activeStates) {
-				for (final Transition<T, E> transition : findTransitionsForState(sourceState)) {
+				P firingPriority = null;
+				for (final Transition<T, E, P> transition : findTransitionsForState(sourceState)) {
 					if (!transitionsThatHaveFiredBefore.contains(transition)) {
+						if (firingPriority != null && !transition.getPriority().equals(firingPriority)) {
+							// We reached a lower prio while higher prio transitions are firing.
+							// Don't consider these anymore.
+							break;
+						}
 						if (transition.getPrecondition().isMet()) {
 							statesToExit.add(sourceState);
 							transitionsToFire.add(transition);
 							statesToEnter.add(transition.getDestinationState());
+							firingPriority = transition.getPriority();
 						}
 					}
 				}
 			}
+
 			for (final T stateToExit : statesToExit) {
 				exitState(stateToExit);
 			}
-			for (final Transition<T, E> transitionToFire : transitionsToFire) {
+			for (final Transition<T, E, P> transitionToFire : transitionsToFire) {
 				transitionToFire.getAction().execute();
 				transitionsThatHaveFiredBefore.add(transitionToFire);
 				stillNewTransitionsFiring = true;
@@ -178,12 +197,12 @@ public class StateMachine<T, E> {
 	}
 
 	private void resetTransitions(final T sourceState) {
-		for (final Transition<T, E> transition : transitions.get(sourceState)) {
+		for (final Transition<T, E, P> transition : transitions.get(sourceState)) {
 			transition.getPrecondition().reset();
 		}
 	}
 
-	private Set<Transition<T, E>> findTransitionsForState(final T sourceState) {
+	private Set<Transition<T, E, P>> findTransitionsForState(final T sourceState) {
 		return transitions.get(sourceState);
 	}
 
@@ -222,11 +241,11 @@ public class StateMachine<T, E> {
 			return new HashSet<T>(StateMachine.this.transitions.keySet());
 		}
 
-		public Set<Transition<T, E>> getTransitionsForSourceState(final T sourceState) {
+		public Set<Transition<T, E, P>> getTransitionsForSourceState(final T sourceState) {
 			// FIXME
-			final Set<Transition<T, E>> transitions = new HashSet<Transition<T, E>>();
+			final Set<Transition<T, E, P>> transitions = new HashSet<Transition<T, E, P>>();
 			if (StateMachine.this.transitions.containsKey(sourceState)) {
-				for (final Transition<T, E> transition : StateMachine.this.transitions.get(sourceState)) {
+				for (final Transition<T, E, P> transition : StateMachine.this.transitions.get(sourceState)) {
 					transitions.add(transition);
 				}
 			}
@@ -238,15 +257,15 @@ public class StateMachine<T, E> {
 	 * The basic builder of the state machine. Other builders can use this to
 	 * deliver nicer syntax.
 	 */
-	public static class Builder<T, E> {
-		private final StateMachine<T, E> machine;
+	public static class Builder<T, E, P extends Comparable<P>> {
+		private final StateMachine<T, E, P> machine;
 
 		public Builder() {
 			log.debug("Start building new machine");
-			machine = new StateMachine<T, E>();
+			machine = new StateMachine<T, E, P>();
 		}
 
-		public StateMachine<T, E>.MetaInformation getMetaInformation() {
+		public StateMachine<T, E, P>.MetaInformation getMetaInformation() {
 			return machine.getMetaInformation();
 		}
 
@@ -265,18 +284,18 @@ public class StateMachine<T, E> {
 			machine.endStates.add(endState);
 		}
 
-		public void addTransition(final Transition<T, E> transition) {
+		public void addTransition(final Transition<T, E, P> transition) {
 			final T sourceState = transition.getSourceState();
 			log.debug("Create transition from {} to {} (pre: {}, action: {})",
 					new Object[] { sourceState, transition.getDestinationState(), transition.getPrecondition(),
 							transition.getAction() });
 			if (!machine.transitions.containsKey(sourceState)) {
-				machine.transitions.put(sourceState, new HashSet<Transition<T, E>>());
+				machine.transitions.put(sourceState, new TreeSet<Transition<T, E, P>>());
 			}
 			machine.transitions.get(sourceState).add(transition);
 		}
 
-		public StateMachine<T, E> build() {
+		public StateMachine<T, E, P> build() {
 			log.debug("Done building new machine");
 			machine.reset();
 			return machine;
@@ -287,13 +306,5 @@ public class StateMachine<T, E> {
 			machine.startStates.add(startState);
 		}
 
-	}
-
-	/**
-	 * @return whether no states are active. Either by all active states having
-	 *         disappeared into end states, or by having no start states at all.
-	 */
-	public boolean isFinished() {
-		return activeStates.size() == 0;
 	}
 }

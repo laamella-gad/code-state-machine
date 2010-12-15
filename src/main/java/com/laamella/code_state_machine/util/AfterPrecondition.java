@@ -3,7 +3,7 @@ package com.laamella.code_state_machine.util;
 /**
  * This precondition is met after a certain amount of milliseconds.
  */
-public final class AfterPrecondition<T, E> extends NonEventBasedPrecondition<E> {
+public final class AfterPrecondition<E> extends NonEventBasedPrecondition<E> {
 	private final long milliseconds;
 	private long minimalMeetTime;
 

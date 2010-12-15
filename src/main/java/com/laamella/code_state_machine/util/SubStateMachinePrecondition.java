@@ -9,11 +9,11 @@ import com.laamella.code_state_machine.StateMachine;
  * @param <E>
  *            event type. The same type as the parent state machine.
  */
-// TODO implement
-public class SubStateMachinePrecondition<T, E> extends EventBasedPrecondition<E> {
-	private final StateMachine<T, E> stateMachine;
+// TODO test
+public class SubStateMachinePrecondition<T, E, P extends Comparable<P>> extends EventBasedPrecondition<E> {
+	private final StateMachine<T, E, P> stateMachine;
 
-	public SubStateMachinePrecondition(final StateMachine<T, E> stateMachine) {
+	public SubStateMachinePrecondition(final StateMachine<T, E, P> stateMachine) {
 		this.stateMachine = stateMachine;
 	}
 

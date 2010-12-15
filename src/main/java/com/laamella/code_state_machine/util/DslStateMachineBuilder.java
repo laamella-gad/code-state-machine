@@ -14,96 +14,138 @@ import com.laamella.code_state_machine.StateMachine;
 /**
  * A pretty "DSL" builder for a state machine.
  */
-public class DslStateMachineBuilder<T, E> {
+public class DslStateMachineBuilder<T, E, P extends Comparable<P>> {
 	private static final Logger log = LoggerFactory.getLogger(StateMachine.class);
 
-	private Set<T> sourceStates = new HashSet<T>();
-	private Precondition<E> storedPrecondition;
-	private Action storedAction;
-	private final StateMachine.Builder<T, E> builder = new StateMachine.Builder<T, E>();
+	public class DefiningState {
+		private Set<T> sourceStates = new HashSet<T>();
 
-	public DslStateMachineBuilder() {
-		resetStoredTransitionVariables();
+		public DefiningState(Set<T> sourceStates) {
+			this.sourceStates = sourceStates;
+		}
+
+		public DefiningState except(final T... states) {
+			for (final T state : states) {
+				sourceStates.remove(state);
+			}
+			return this;
+		}
+
+		public DefiningState onExit(final Action action) {
+			for (final T sourceState : sourceStates) {
+				builder.setExitAction(sourceState, action);
+			}
+			return this;
+		}
+
+		public DefiningState onEntry(final Action action) {
+			for (final T sourceState : sourceStates) {
+				log.debug("Create entry action for {} ({})", sourceState, action);
+				builder.setEntryAction(sourceState, action);
+			}
+			return this;
+		}
+
+		public DefiningState isAnEndState() {
+			for (final T state : sourceStates) {
+				builder.addEndState(state);
+			}
+			return this;
+		}
+
+		public DefiningState isAStartState() {
+			for (final T state : sourceStates) {
+				builder.addStartState(state);
+			}
+			return this;
+		}
+
+		public DefiningState areEndStates() {
+			return isAnEndState();
+		}
+
+		public DefiningState areStartStates() {
+			return isAStartState();
+		}
+
+		public DefiningTransition when(final Precondition<E> precondition) {
+			return new DefiningTransition(sourceStates, precondition);
+		}
+
+		public DefiningTransition when(final E... events) {
+			return new DefiningTransition(sourceStates, is(events));
+		}
+
 	}
 
-	public StateMachine<T, E> buildMachine() {
+	public class DefiningTransition {
+		private Precondition<E> storedPrecondition;
+		private Action action = nothing();
+		private final Set<T> sourceStates;
+		private P priority = defaultPriority;
+
+		public DefiningTransition(Set<T> sourceStates, Precondition<E> precondition) {
+			this.sourceStates = sourceStates;
+			this.storedPrecondition = precondition;
+		}
+
+		public DefiningTransition action(final Action action) {
+			this.action = action;
+			return this;
+		}
+
+		public DefiningState then(final T destinationState) {
+			return transition(destinationState, storedPrecondition, action, priority);
+		}
+
+		public DefiningState transition(final T destinationState, final Precondition<E> precondition,
+				final Action action, P priority) {
+			for (final T sourceState : sourceStates) {
+				builder.addTransition(new BasicTransition<T, E, P>(sourceState, destinationState, precondition, action,
+						priority));
+			}
+			return new DefiningState(sourceStates);
+		}
+
+		public DefiningTransition withPrio(P priority) {
+			this.priority = priority;
+			return this;
+		}
+	}
+
+	private final StateMachine.Builder<T, E, P> builder = new StateMachine.Builder<T, E, P>();
+	private final P defaultPriority;
+
+	public DslStateMachineBuilder(P defaultPriority) {
+		this.defaultPriority = defaultPriority;
+	}
+
+	public StateMachine<T, E, P> buildMachine() {
 		return builder.build();
 	}
 
 	@SuppressWarnings("unchecked")
-	public DslStateMachineBuilder<T, E> state(final T state) {
+	public DefiningState state(final T state) {
 		return states(state);
 	}
 
-	public DslStateMachineBuilder<T, E> states(final T... states) {
-		sourceStates = new HashSet<T>(Arrays.asList(states));
-		return this;
+	public DefiningState states(final T... states) {
+		return new DefiningState(new HashSet<T>(Arrays.asList(states)));
 	}
 
-	public DslStateMachineBuilder<T, E> except(final T... states) {
-		for (final T state : states) {
-			sourceStates.remove(state);
-		}
-		return this;
-	}
-
-	public DslStateMachineBuilder<T, E> onExit(final Action action) {
-		for (final T sourceState : sourceStates) {
-			builder.setExitAction(sourceState, action);
-		}
-		return this;
-	}
-
-	public DslStateMachineBuilder<T, E> onEntry(final Action action) {
-		for (final T sourceState : sourceStates) {
-			log.debug("Create entry action for {} ({})", sourceState, action);
-			builder.setEntryAction(sourceState, action);
-		}
-		return this;
-	}
-
-	public DslStateMachineBuilder<T, E> transition(final T destinationState, final Precondition<E> precondition,
-			final Action action) {
-		for (final T sourceState : sourceStates) {
-			builder.addTransition(new BasicTransition<T, E>(sourceState, destinationState, precondition, action));
-		}
-		resetStoredTransitionVariables();
-		return this;
-	}
-
-	private void resetStoredTransitionVariables() {
-		storedAction = nothing();
-		storedPrecondition = always();
-	}
-
-	public DslStateMachineBuilder<T, E> when(final Precondition<E> precondition) {
-		storedPrecondition = precondition;
-		return this;
-	}
-
-	public DslStateMachineBuilder<T, E> when(final E... events) {
-		storedPrecondition = is(events);
-		return this;
-	}
-
-	public DslStateMachineBuilder<T, E> action(final Action action) {
-		storedAction = action;
-		return this;
-	}
-
-	public DslStateMachineBuilder<T, E> then(final T destinationState) {
-		return transition(destinationState, storedPrecondition, storedAction);
-	}
-
-	public Precondition<E> always() {
+	public static <E> Precondition<E> always() {
 		return new AlwaysPrecondition<E>();
 	}
 
-	public Precondition<E> after(final long milliseconds) {
-		return new AfterPrecondition<T, E>(milliseconds);
+	public static <E> Precondition<E> never() {
+		return new NeverPrecondition<E>();
 	}
 
-	public Precondition<E> is(final E... events) {
+	public static <E> Precondition<E> after(final long milliseconds) {
+		return new AfterPrecondition<E>(milliseconds);
+	}
+
+	public static <E> Precondition<E> is(final E... events) {
 		assert events != null;
 		assert events.length != 0;
 
@@ -115,29 +157,8 @@ public class DslStateMachineBuilder<T, E> {
 		return new MultiEventMatchPrecondition<E>(events);
 	}
 
-	public Action nothing() {
+	public static Action nothing() {
 		return new NoAction();
 	}
 
-	public DslStateMachineBuilder<T, E> isEndState() {
-		for (final T state : sourceStates) {
-			builder.addEndState(state);
-		}
-		return this;
-	}
-
-	public DslStateMachineBuilder<T, E> isStartState() {
-		for (final T state : sourceStates) {
-			builder.addStartState(state);
-		}
-		return this;
-	}
-
-	public DslStateMachineBuilder<T, E> areEndStates() {
-		return isEndState();
-	}
-
-	public DslStateMachineBuilder<T, E> areStartStates() {
-		return isStartState();
-	}
 }

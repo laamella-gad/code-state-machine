@@ -6,10 +6,10 @@ import com.laamella.code_state_machine.Transition;
 /**
  * Creates a "dot" diagram of the state machine.
  */
-public class DotOutput<T, E> {
-	private final StateMachine<T, E>.MetaInformation metaInformation;
+public class DotOutput<T, E, P extends Comparable<P>> {
+	private final StateMachine<T, E, P>.MetaInformation metaInformation;
 
-	public DotOutput(final StateMachine<T, E>.MetaInformation metaInformation) {
+	public DotOutput(final StateMachine<T, E, P>.MetaInformation metaInformation) {
 		this.metaInformation = metaInformation;
 	}
 
@@ -25,7 +25,7 @@ public class DotOutput<T, E> {
 		output.append(";\n");
 		output.append("\tnode [shape = circle];\n");
 		for (final T sourceState : metaInformation.getSourceStates()) {
-			for (final Transition<T, E> transition : metaInformation.getTransitionsForSourceState(sourceState)) {
+			for (final Transition<T, E, P> transition : metaInformation.getTransitionsForSourceState(sourceState)) {
 				output.append("\t" + sourceState + " -> " + transition.getDestinationState());
 
 				output.append(" [ label = \"" + transition.getPrecondition() + "\" ]");

@@ -16,11 +16,7 @@ import static com.laamella.code_state_machine.GameState.LEVEL;
 import static com.laamella.code_state_machine.GameState.LEVEL_FINISH;
 import static com.laamella.code_state_machine.GameState.LOADER;
 import static com.laamella.code_state_machine.GameState.MENU;
-import static org.junit.Assert.fail;
-
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
+import static com.laamella.code_state_machine.StateMachineAssert.assertActive;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -29,12 +25,14 @@ import org.slf4j.LoggerFactory;
 
 import com.laamella.code_state_machine.util.DotOutput;
 import com.laamella.code_state_machine.util.DslStateMachineBuilder;
+import com.laamella.code_state_machine.util.Priority;
 
 public class Tests {
 	private static final Logger log = LoggerFactory.getLogger(Tests.class);
 
-	private static class GameMachineBuilder extends DslStateMachineBuilder<GameState, GameEvent> {
+	private static class GameMachineBuilder extends DslStateMachineBuilder<GameState, GameEvent, Priority> {
 		public GameMachineBuilder() {
+			super(Priority.NORMAL);
 			state(LOADER).onExit(new Action() {
 				@Override
 				public void execute() {
@@ -50,7 +48,7 @@ public class Tests {
 				public void execute() {
 				}
 			};
-			state(LOADER).isStartState().when(DONE).action(bing).then(INTRO);
+			state(LOADER).isAStartState().when(DONE).action(bing).then(INTRO);
 			state(INTRO).when(DONE).then(MENU);
 			state(MENU).when(START).then(GET_READY).when(ESCAPE).then(EXIT);
 			state(GET_READY).when(DONE).then(LEVEL);
@@ -64,16 +62,16 @@ public class Tests {
 
 			state(CONFIGURATION).when(FIRE_A).then(INTRO);
 
-			state(EXIT).isEndState();
+			state(EXIT).isAnEndState();
 		}
 	}
 
-	private StateMachine<GameState, GameEvent> gameMachine;
+	private StateMachine<GameState, GameEvent, Priority> gameMachine;
 
 	@Before
 	public void before() {
 		gameMachine = new GameMachineBuilder().buildMachine();
-		log.trace("\n" + new DotOutput<GameState, GameEvent>(gameMachine.getMetaInformation()).getOutput());
+		log.trace("\n" + new DotOutput<GameState, GameEvent, Priority>(gameMachine.getMetaInformation()).getOutput());
 	}
 
 	@Test
@@ -120,19 +118,5 @@ public class Tests {
 		gameMachine.handleEvent(GameEvent.DONE);
 		gameMachine.reset();
 		assertActive(gameMachine, GameState.LOADER);
-	}
-
-	private static <T extends Enum<?>, E> void assertActive(final StateMachine<T, E> machine, final T... expectedStates) {
-		for (final T expectedState : expectedStates) {
-			if (!machine.isActive(expectedState)) {
-				fail("Expected " + expectedState + " to be active.");
-			}
-		}
-		final Set<T> expectedStatesSet = new HashSet<T>(Arrays.asList(expectedStates));
-		for (final T actualState : machine.getActiveStates()) {
-			if (!expectedStatesSet.contains(actualState)) {
-				fail("" + actualState + " was active, but not expected.");
-			}
-		}
 	}
 }
