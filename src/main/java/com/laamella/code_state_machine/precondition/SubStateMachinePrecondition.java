@@ -10,7 +10,7 @@ import com.laamella.code_state_machine.StateMachine;
  *            event type. The same type as the parent state machine.
  */
 // TODO test
-public class SubStateMachinePrecondition<T, E, P extends Comparable<P>> extends EventBasedPrecondition<E> {
+public final class SubStateMachinePrecondition<T, E, P extends Comparable<P>> extends EventBasedPrecondition<E> {
 	private final StateMachine<T, E, P> stateMachine;
 
 	public SubStateMachinePrecondition(final StateMachine<T, E, P> stateMachine) {

@@ -1,10 +1,8 @@
 package com.laamella.code_state_machine;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.Queue;
@@ -46,8 +44,8 @@ public class StateMachine<T, E, P extends Comparable<P>> {
 	private final Set<T> startStates = new HashSet<T>();
 	private final Set<T> endStates = new HashSet<T>();
 	private final Set<T> activeStates = new HashSet<T>();
-	private final Map<T, Actions> exitEvents = new HashMap<T, Actions>();
-	private final Map<T, Actions> entryEvents = new HashMap<T, Actions>();
+	private final Map<T, ActionChain> exitEvents = new HashMap<T, ActionChain>();
+	private final Map<T, ActionChain> entryEvents = new HashMap<T, ActionChain>();
 	private final Map<T, Queue<Transition<T, E, P>>> transitions = new HashMap<T, Queue<Transition<T, E, P>>>();
 
 	/**
@@ -183,7 +181,7 @@ public class StateMachine<T, E, P extends Comparable<P>> {
 		} while (stillNewTransitionsFiring);
 	}
 
-	private void executeActions(final Actions actions) {
+	private void executeActions(final ActionChain actions) {
 		if (actions != null) {
 			actions.execute();
 		}
@@ -284,7 +282,7 @@ public class StateMachine<T, E, P extends Comparable<P>> {
 		public void addExitActions(final T state, final Action... action) {
 			log.debug("Create exit action for '{}' ({}) ", state, action);
 			if (!machine.exitEvents.containsKey(state)) {
-				machine.exitEvents.put(state, new Actions(action));
+				machine.exitEvents.put(state, new ActionChain(action));
 				return;
 			}
 			machine.exitEvents.get(state).add(action);
@@ -293,7 +291,7 @@ public class StateMachine<T, E, P extends Comparable<P>> {
 		public void addEntryActions(final T state, final Action... action) {
 			log.debug("Create entry action for '{}' ({}) ", state, action);
 			if (!machine.entryEvents.containsKey(state)) {
-				machine.entryEvents.put(state, new Actions(action));
+				machine.entryEvents.put(state, new ActionChain(action));
 				return;
 			}
 			machine.entryEvents.get(state).add(action);

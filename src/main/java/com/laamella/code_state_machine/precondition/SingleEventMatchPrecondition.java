@@ -1,5 +1,9 @@
 package com.laamella.code_state_machine.precondition;
 
+/**
+ * This precondition is met when the event is equal to the event passed in the
+ * constructor.
+ */
 public final class SingleEventMatchPrecondition<E> extends EventBasedPrecondition<E> {
 	private final E singleEvent;
 

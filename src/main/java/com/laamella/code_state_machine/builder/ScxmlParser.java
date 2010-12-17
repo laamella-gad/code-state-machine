@@ -15,7 +15,7 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 import com.laamella.code_state_machine.Action;
-import com.laamella.code_state_machine.Actions;
+import com.laamella.code_state_machine.ActionChain;
 import com.laamella.code_state_machine.Transition;
 import com.laamella.code_state_machine.Precondition;
 import com.laamella.code_state_machine.StateMachine;
@@ -122,7 +122,7 @@ public abstract class ScxmlParser<T, E, P extends Comparable<P>> {
 							condition = interpretCondition(subElement.getAttribute(CONDITION_ATTRIBUTE));
 						}
 
-						final Actions actions = new Actions();
+						final ActionChain actions = new ActionChain();
 						if (subElement.hasAttribute(EVENT_ATTRIBUTE)) {
 							actions.add(interpretEvent(subElement.getAttribute(EVENT_ATTRIBUTE)));
 						}

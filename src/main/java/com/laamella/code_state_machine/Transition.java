@@ -10,15 +10,15 @@ package com.laamella.code_state_machine;
  * @param <P>
  *            type of priority.
  */
-public class Transition<T, E, P extends Comparable<P>> {
+public class Transition<T, E, P extends Comparable<P>> implements Comparable<Transition<T, E, P>> {
 	private final T destinationState;
 	private final T sourceState;
 	private final Precondition<E> precondition;
-	private final Actions action;
+	private final ActionChain action;
 	private final P priority;
 
 	public Transition(final T sourceState, final T destinationState, final Precondition<E> precondition,
-			final P priority, final Actions actions) {
+			final P priority, final ActionChain actions) {
 		assert destinationState != null;
 		assert sourceState != null;
 		assert precondition != null;
@@ -50,7 +50,7 @@ public class Transition<T, E, P extends Comparable<P>> {
 	 * @return The actions that will be executed when this transition fires.
 	 *         Never null.
 	 */
-	public Actions getActions() {
+	public ActionChain getActions() {
 		return action;
 	}
 
@@ -67,6 +67,7 @@ public class Transition<T, E, P extends Comparable<P>> {
 	 * @param o
 	 * @return
 	 */
+	@Override
 	public int compareTo(final Transition<T, E, P> o) {
 		return priority.compareTo(o.getPriority());
 	}

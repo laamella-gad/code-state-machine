@@ -8,7 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.laamella.code_state_machine.Action;
-import com.laamella.code_state_machine.Actions;
+import com.laamella.code_state_machine.ActionChain;
 import com.laamella.code_state_machine.Transition;
 import com.laamella.code_state_machine.Precondition;
 import com.laamella.code_state_machine.StateMachine;
@@ -88,7 +88,7 @@ public class DslStateMachineBuilder<T, E, P extends Comparable<P>> {
 
 	public class DefiningTransition {
 		private final Precondition<E> storedPrecondition;
-		private final Actions actions = new Actions();
+		private final ActionChain actions = new ActionChain();
 		private final Set<T> sourceStates;
 		private P priority = defaultPriority;
 
@@ -107,7 +107,7 @@ public class DslStateMachineBuilder<T, E, P extends Comparable<P>> {
 		}
 
 		public DefiningState transition(final T destinationState, final Precondition<E> precondition, final P priority,
-				final Actions actions) {
+				final ActionChain actions) {
 			this.actions.add(actions);
 			for (final T sourceState : sourceStates) {
 				builder.addTransition(new Transition<T, E, P>(sourceState, destinationState, precondition,
@@ -118,7 +118,7 @@ public class DslStateMachineBuilder<T, E, P extends Comparable<P>> {
 
 		public DefiningState transition(final T destinationState, final Precondition<E> precondition, final P priority,
 				final Action... actions) {
-			return transition(destinationState, precondition, priority, new Actions(actions));
+			return transition(destinationState, precondition, priority, new ActionChain(actions));
 		}
 
 		public DefiningTransition withPrio(final P priority) {
