@@ -1,4 +1,4 @@
-package com.laamella.code_state_machine.util;
+package com.laamella.code_state_machine.action;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

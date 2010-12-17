@@ -1,4 +1,4 @@
-package com.laamella.code_state_machine.util;
+package com.laamella.code_state_machine.io;
 
 import com.laamella.code_state_machine.StateMachine;
 import com.laamella.code_state_machine.Transition;
@@ -18,12 +18,17 @@ public class DotOutput<T, E, P extends Comparable<P>> {
 		output.append("digraph finite_state_machine {\n");
 		output.append("\trankdir=LR;\n");
 		output.append("\tsize=\"8,5\"\n");
-		output.append("\tnode [shape = doublecircle];");
+		output.append("\tnode [shape = doublecircle, style=solid];");
 		for (final T startState : metaInformation.getStartStates()) {
 			output.append(" " + startState);
 		}
 		output.append(";\n");
-		output.append("\tnode [shape = circle];\n");
+		output.append("\tnode [shape = circle, style=dotted];");
+		for (final T startState : metaInformation.getEndStates()) {
+			output.append(" " + startState);
+		}
+		output.append(";\n");
+		output.append("\tnode [shape = circle, style=solid];\n");
 		for (final T sourceState : metaInformation.getSourceStates()) {
 			for (final Transition<T, E, P> transition : metaInformation.getTransitionsForSourceState(sourceState)) {
 				output.append("\t" + sourceState + " -> " + transition.getDestinationState());

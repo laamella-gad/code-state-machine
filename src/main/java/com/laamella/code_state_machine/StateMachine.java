@@ -4,8 +4,9 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.PriorityQueue;
+import java.util.Queue;
 import java.util.Set;
-import java.util.TreeSet;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,6 +23,9 @@ import org.slf4j.LoggerFactory;
  * <li>Each transition can have one action</li>
  * <li>It does not do any kind of compilation</li>
  * <li>Its code is easy to understand</li>
+ * <li>The state type can be anything</li>
+ * <li>The event type can be anything</li>
+ * <li>The priority type can be anything as long as it's Comparable</li>
  * </ul>
  * 
  * @param <T>
@@ -32,8 +36,8 @@ import org.slf4j.LoggerFactory;
  *            world, and are used to trigger state transitions.
  * @param <P>
  *            Priority type. Will be used to give priorities to transitions.
+ *            Enums and Integers are useful here.
  */
-// TODO priorities
 public class StateMachine<T, E, P extends Comparable<P>> {
 	private static final Logger log = LoggerFactory.getLogger(StateMachine.class);
 
@@ -44,7 +48,7 @@ public class StateMachine<T, E, P extends Comparable<P>> {
 	private final Map<T, Action> exitEvents = new HashMap<T, Action>();
 	// TODO support a list of entry events
 	private final Map<T, Action> entryEvents = new HashMap<T, Action>();
-	private final Map<T, Set<Transition<T, E, P>>> transitions = new HashMap<T, Set<Transition<T, E, P>>>();
+	private final Map<T, Queue<Transition<T, E, P>>> transitions = new HashMap<T, Queue<Transition<T, E, P>>>();
 
 	/**
 	 * This class can only be created through its builder.
@@ -111,22 +115,34 @@ public class StateMachine<T, E, P extends Comparable<P>> {
 	}
 
 	/**
-	 * Repeat...
+	 * Tells the state machine to look for state changes to execute. This method
+	 * has to be called regularly, or the state machine will do nothing at all.
+	 * <ul>
+	 * <li>Repeat...</li>
 	 * <ol>
 	 * <li>For all transitions that have an active source state, find the
-	 * transitions that will fire for the supplied event. Ignore transitions
-	 * that have already fired in this poll().</li>
+	 * transitions that will fire.</li>
+	 * <ul>
+	 * <li>Ignore transitions that have already fired in this poll().</li>
+	 * <li>For a single source state, find the transition of the highest
+	 * priority which will fire (if any fire at all.) Only consider firing
+	 * transitions for this source state that have this same priority.</li>
+	 * </ul>
 	 * <li>For all states that will be exited, fire the exit state event.</li>
 	 * <li>For all transitions that fire, fire the transition action.</li>
 	 * <li>For all states that will be entered, fire the entry state event.</li>
 	 * </ol>
-	 * ... until no transitions have fired.
-	 * <p>
+	 * <li>... until no transitions have fired.</li>
+	 * </ul>
+	 * <p/>
 	 * If multiple transitions can fire for a single source state, there is no
 	 * selection step as is usually the case in state machines. The state
-	 * machine will simply fire all of the transitions, creating multiple new
-	 * states.
-	 * </p>
+	 * machine will simply fire all of the transitions, entering all of their
+	 * destination states.
+	 * <p/>
+	 * This method prevents itself from looping endlessly on a loop in the state
+	 * machine by only considering transitions that have not fired before in
+	 * this poll.
 	 */
 	public void poll() {
 		boolean stillNewTransitionsFiring = true;
@@ -144,7 +160,7 @@ public class StateMachine<T, E, P extends Comparable<P>> {
 					if (!transitionsThatHaveFiredBefore.contains(transition)) {
 						if (firingPriority != null && !transition.getPriority().equals(firingPriority)) {
 							// We reached a lower prio while higher prio transitions are firing.
-							// Don't consider these anymore.
+							// Don't consider these anymore, go to the next source state.
 							break;
 						}
 						if (transition.getPrecondition().isMet()) {
@@ -202,7 +218,7 @@ public class StateMachine<T, E, P extends Comparable<P>> {
 		}
 	}
 
-	private Set<Transition<T, E, P>> findTransitionsForState(final T sourceState) {
+	private Queue<Transition<T, E, P>> findTransitionsForState(final T sourceState) {
 		return transitions.get(sourceState);
 	}
 
@@ -242,7 +258,7 @@ public class StateMachine<T, E, P extends Comparable<P>> {
 		}
 
 		public Set<Transition<T, E, P>> getTransitionsForSourceState(final T sourceState) {
-			// FIXME
+			// TODO looks like this can be made a lot simpler.
 			final Set<Transition<T, E, P>> transitions = new HashSet<Transition<T, E, P>>();
 			if (StateMachine.this.transitions.containsKey(sourceState)) {
 				for (final Transition<T, E, P> transition : StateMachine.this.transitions.get(sourceState)) {
@@ -270,27 +286,26 @@ public class StateMachine<T, E, P extends Comparable<P>> {
 		}
 
 		public void setExitAction(final T state, final Action action) {
-			log.debug("Create exit action for {} ({}) ", state, action);
+			log.debug("Create exit action for '{}' ({}) ", state, action);
 			machine.exitEvents.put(state, action);
 		}
 
 		public void setEntryAction(final T state, final Action action) {
-			log.debug("Create entry action for {} ({}) ", state, action);
+			log.debug("Create entry action for '{}' ({}) ", state, action);
 			machine.entryEvents.put(state, action);
 		}
 
 		public void addEndState(final T endState) {
-			log.debug("Add end state {}", endState);
+			log.debug("Add end state '{}'", endState);
 			machine.endStates.add(endState);
 		}
 
 		public void addTransition(final Transition<T, E, P> transition) {
 			final T sourceState = transition.getSourceState();
-			log.debug("Create transition from {} to {} (pre: {}, action: {})",
-					new Object[] { sourceState, transition.getDestinationState(), transition.getPrecondition(),
-							transition.getAction() });
+			log.debug("Create transition from '{}' to '{}' (pre: '{}', action: '{}')", new Object[] { sourceState,
+					transition.getDestinationState(), transition.getPrecondition(), transition.getAction() });
 			if (!machine.transitions.containsKey(sourceState)) {
-				machine.transitions.put(sourceState, new TreeSet<Transition<T, E, P>>());
+				machine.transitions.put(sourceState, new PriorityQueue<Transition<T, E, P>>());
 			}
 			machine.transitions.get(sourceState).add(transition);
 		}
@@ -302,7 +317,7 @@ public class StateMachine<T, E, P extends Comparable<P>> {
 		}
 
 		public void addStartState(final T startState) {
-			log.debug("Add start state {}", startState);
+			log.debug("Add start state '{}'", startState);
 			machine.startStates.add(startState);
 		}
 

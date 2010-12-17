@@ -1,4 +1,4 @@
-package com.laamella.code_state_machine.util;
+package com.laamella.code_state_machine.precondition;
 
 import com.laamella.code_state_machine.StateMachine;
 

@@ -1,4 +1,4 @@
-package com.laamella.code_state_machine.util;
+package com.laamella.code_state_machine.builder;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -10,17 +10,24 @@ import org.slf4j.LoggerFactory;
 import com.laamella.code_state_machine.Action;
 import com.laamella.code_state_machine.Precondition;
 import com.laamella.code_state_machine.StateMachine;
+import com.laamella.code_state_machine.action.NoAction;
+import com.laamella.code_state_machine.precondition.AfterPrecondition;
+import com.laamella.code_state_machine.precondition.AlwaysPrecondition;
+import com.laamella.code_state_machine.precondition.MultiEventMatchPrecondition;
+import com.laamella.code_state_machine.precondition.NeverPrecondition;
+import com.laamella.code_state_machine.precondition.SingleEventMatchPrecondition;
+import com.laamella.code_state_machine.transition.BasicTransition;
 
 /**
  * A pretty "DSL" builder for a state machine.
  */
 public class DslStateMachineBuilder<T, E, P extends Comparable<P>> {
-	private static final Logger log = LoggerFactory.getLogger(StateMachine.class);
+	private static final Logger log = LoggerFactory.getLogger(DslStateMachineBuilder.class);
 
 	public class DefiningState {
 		private Set<T> sourceStates = new HashSet<T>();
 
-		public DefiningState(Set<T> sourceStates) {
+		public DefiningState(final Set<T> sourceStates) {
 			this.sourceStates = sourceStates;
 		}
 
@@ -79,12 +86,12 @@ public class DslStateMachineBuilder<T, E, P extends Comparable<P>> {
 	}
 
 	public class DefiningTransition {
-		private Precondition<E> storedPrecondition;
+		private final Precondition<E> storedPrecondition;
 		private Action action = nothing();
 		private final Set<T> sourceStates;
 		private P priority = defaultPriority;
 
-		public DefiningTransition(Set<T> sourceStates, Precondition<E> precondition) {
+		public DefiningTransition(final Set<T> sourceStates, final Precondition<E> precondition) {
 			this.sourceStates = sourceStates;
 			this.storedPrecondition = precondition;
 		}
@@ -99,7 +106,7 @@ public class DslStateMachineBuilder<T, E, P extends Comparable<P>> {
 		}
 
 		public DefiningState transition(final T destinationState, final Precondition<E> precondition,
-				final Action action, P priority) {
+				final Action action, final P priority) {
 			for (final T sourceState : sourceStates) {
 				builder.addTransition(new BasicTransition<T, E, P>(sourceState, destinationState, precondition, action,
 						priority));
@@ -107,7 +114,7 @@ public class DslStateMachineBuilder<T, E, P extends Comparable<P>> {
 			return new DefiningState(sourceStates);
 		}
 
-		public DefiningTransition withPrio(P priority) {
+		public DefiningTransition withPrio(final P priority) {
 			this.priority = priority;
 			return this;
 		}
@@ -116,7 +123,7 @@ public class DslStateMachineBuilder<T, E, P extends Comparable<P>> {
 	private final StateMachine.Builder<T, E, P> builder = new StateMachine.Builder<T, E, P>();
 	private final P defaultPriority;
 
-	public DslStateMachineBuilder(P defaultPriority) {
+	public DslStateMachineBuilder(final P defaultPriority) {
 		this.defaultPriority = defaultPriority;
 	}
 
@@ -158,7 +165,7 @@ public class DslStateMachineBuilder<T, E, P extends Comparable<P>> {
 	}
 
 	public static Action nothing() {
-		return new NoAction();
+		return NoAction.INSTANCE;
 	}
 
 }

@@ -1,4 +1,4 @@
-package com.laamella.code_state_machine.util;
+package com.laamella.code_state_machine;
 
 import static com.laamella.code_state_machine.StateMachineAssert.assertActive;
 import static com.laamella.code_state_machine.util.SimpleState.A;
@@ -13,6 +13,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.laamella.code_state_machine.StateMachine;
+import com.laamella.code_state_machine.builder.DslStateMachineBuilder;
+import com.laamella.code_state_machine.io.DotOutput;
+import com.laamella.code_state_machine.priority.Priority;
+import com.laamella.code_state_machine.util.SimpleState;
 
 public class AutomaticFiringTests {
 	private static final Logger log = LoggerFactory.getLogger(AutomaticFiringTests.class);

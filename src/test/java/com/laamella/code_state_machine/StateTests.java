@@ -23,31 +23,20 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.laamella.code_state_machine.util.DotOutput;
-import com.laamella.code_state_machine.util.DslStateMachineBuilder;
-import com.laamella.code_state_machine.util.Priority;
+import com.laamella.code_state_machine.action.NoAction;
+import com.laamella.code_state_machine.builder.DslStateMachineBuilder;
+import com.laamella.code_state_machine.io.DotOutput;
+import com.laamella.code_state_machine.priority.Priority;
 
-public class Tests {
-	private static final Logger log = LoggerFactory.getLogger(Tests.class);
+public class StateTests {
+	private static final Logger log = LoggerFactory.getLogger(StateTests.class);
 
 	private static class GameMachineBuilder extends DslStateMachineBuilder<GameState, GameEvent, Priority> {
 		public GameMachineBuilder() {
 			super(Priority.NORMAL);
-			state(LOADER).onExit(new Action() {
-				@Override
-				public void execute() {
-				}
-			}).onEntry(new Action() {
-				@Override
-				public void execute() {
-				}
-			});
+			state(LOADER).onExit(NoAction.INSTANCE).onEntry(NoAction.INSTANCE);
 
-			final Action bing = new Action() {
-				@Override
-				public void execute() {
-				}
-			};
+			final Action bing = NoAction.INSTANCE;
 			state(LOADER).isAStartState().when(DONE).action(bing).then(INTRO);
 			state(INTRO).when(DONE).then(MENU);
 			state(MENU).when(START).then(GET_READY).when(ESCAPE).then(EXIT);
