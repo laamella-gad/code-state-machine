@@ -23,7 +23,6 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.laamella.code_state_machine.action.NoAction;
 import com.laamella.code_state_machine.builder.DslStateMachineBuilder;
 import com.laamella.code_state_machine.io.DotOutput;
 import com.laamella.code_state_machine.priority.Priority;
@@ -34,10 +33,9 @@ public class StateTests {
 	private static class GameMachineBuilder extends DslStateMachineBuilder<GameState, GameEvent, Priority> {
 		public GameMachineBuilder() {
 			super(Priority.NORMAL);
-			state(LOADER).onExit(NoAction.INSTANCE).onEntry(NoAction.INSTANCE);
+			state(LOADER).onExit(log("exit!")).onEntry(log("enter!"));
 
-			final Action bing = NoAction.INSTANCE;
-			state(LOADER).isAStartState().when(DONE).action(bing).then(INTRO);
+			state(LOADER).isAStartState().when(DONE).action(log("bing!")).then(INTRO);
 			state(INTRO).when(DONE).then(MENU);
 			state(MENU).when(START).then(GET_READY).when(ESCAPE).then(EXIT);
 			state(GET_READY).when(DONE).then(LEVEL);

@@ -15,12 +15,12 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 import com.laamella.code_state_machine.Action;
+import com.laamella.code_state_machine.Actions;
+import com.laamella.code_state_machine.Transition;
 import com.laamella.code_state_machine.Precondition;
 import com.laamella.code_state_machine.StateMachine;
 import com.laamella.code_state_machine.StateMachine.Builder;
-import com.laamella.code_state_machine.action.NoAction;
 import com.laamella.code_state_machine.precondition.AlwaysPrecondition;
-import com.laamella.code_state_machine.transition.BasicTransition;
 
 /**
  * A State machine builder that attempts to read the SCXML format. Since many
@@ -122,21 +122,21 @@ public abstract class ScxmlParser<T, E, P extends Comparable<P>> {
 							condition = interpretCondition(subElement.getAttribute(CONDITION_ATTRIBUTE));
 						}
 
-						Action event = NoAction.INSTANCE;
+						final Actions actions = new Actions();
 						if (subElement.hasAttribute(EVENT_ATTRIBUTE)) {
-							event = interpretEvent(subElement.getAttribute(EVENT_ATTRIBUTE));
+							actions.add(interpretEvent(subElement.getAttribute(EVENT_ATTRIBUTE)));
 						}
 
 						// TODO do something about priorities
-						builder.addTransition(new BasicTransition<T, E, P>(state, targetState, condition, event,
-								defaultPriority));
+						builder.addTransition(new Transition<T, E, P>(state, targetState, condition,
+								defaultPriority, actions));
 					} else {
 						log.warn("State " + stateName + " has a transition going nowhere.");
 					}
 				} else if (subNodeName.equals("onentry")) {
-					builder.addEntryAction(state, interpretEvent(subNode.getTextContent()));
+					builder.addEntryActions(state, interpretEvent(subNode.getTextContent()));
 				} else if (subNodeName.equals("onexit")) {
-					builder.addExitAction(state, interpretEvent(subNode.getTextContent()));
+					builder.addExitActions(state, interpretEvent(subNode.getTextContent()));
 				}
 			}
 		}

@@ -46,8 +46,8 @@ public class StateMachine<T, E, P extends Comparable<P>> {
 	private final Set<T> startStates = new HashSet<T>();
 	private final Set<T> endStates = new HashSet<T>();
 	private final Set<T> activeStates = new HashSet<T>();
-	private final Map<T, List<Action>> exitEvents = new HashMap<T, List<Action>>();
-	private final Map<T, List<Action>> entryEvents = new HashMap<T, List<Action>>();
+	private final Map<T, Actions> exitEvents = new HashMap<T, Actions>();
+	private final Map<T, Actions> entryEvents = new HashMap<T, Actions>();
 	private final Map<T, Queue<Transition<T, E, P>>> transitions = new HashMap<T, Queue<Transition<T, E, P>>>();
 
 	/**
@@ -172,7 +172,7 @@ public class StateMachine<T, E, P extends Comparable<P>> {
 				exitState(stateToExit);
 			}
 			for (final Transition<T, E, P> transitionToFire : transitionsToFire) {
-				transitionToFire.getAction().execute();
+				executeActions(transitionToFire.getActions());
 				transitionsThatHaveFiredBefore.add(transitionToFire);
 				stillNewTransitionsFiring = true;
 			}
@@ -181,6 +181,12 @@ public class StateMachine<T, E, P extends Comparable<P>> {
 			}
 
 		} while (stillNewTransitionsFiring);
+	}
+
+	private void executeActions(final Actions actions) {
+		if (actions != null) {
+			actions.execute();
+		}
 	}
 
 	private void exitState(final T state) {
@@ -218,21 +224,11 @@ public class StateMachine<T, E, P extends Comparable<P>> {
 	}
 
 	private void executeExitActions(final T state) {
-		final List<Action> actions = exitEvents.get(state);
-		if (actions != null) {
-			for (final Action action : actions) {
-				action.execute();
-			}
-		}
+		executeActions(exitEvents.get(state));
 	}
 
 	private void executeEntryActions(final T state) {
-		final List<Action> actions = entryEvents.get(state);
-		if (actions != null) {
-			for (final Action action : actions) {
-				action.execute();
-			}
-		}
+		executeActions(entryEvents.get(state));
 	}
 
 	/**
@@ -285,18 +281,20 @@ public class StateMachine<T, E, P extends Comparable<P>> {
 			return machine.getMetaInformation();
 		}
 
-		public void addExitAction(final T state, final Action action) {
+		public void addExitActions(final T state, final Action... action) {
 			log.debug("Create exit action for '{}' ({}) ", state, action);
 			if (!machine.exitEvents.containsKey(state)) {
-				machine.exitEvents.put(state, new ArrayList<Action>(1));
+				machine.exitEvents.put(state, new Actions(action));
+				return;
 			}
 			machine.exitEvents.get(state).add(action);
 		}
 
-		public void addEntryAction(final T state, final Action action) {
+		public void addEntryActions(final T state, final Action... action) {
 			log.debug("Create entry action for '{}' ({}) ", state, action);
 			if (!machine.entryEvents.containsKey(state)) {
-				machine.entryEvents.put(state, new ArrayList<Action>(1));
+				machine.entryEvents.put(state, new Actions(action));
+				return;
 			}
 			machine.entryEvents.get(state).add(action);
 		}
@@ -309,7 +307,7 @@ public class StateMachine<T, E, P extends Comparable<P>> {
 		public void addTransition(final Transition<T, E, P> transition) {
 			final T sourceState = transition.getSourceState();
 			log.debug("Create transition from '{}' to '{}' (pre: '{}', action: '{}')", new Object[] { sourceState,
-					transition.getDestinationState(), transition.getPrecondition(), transition.getAction() });
+					transition.getDestinationState(), transition.getPrecondition(), transition.getActions() });
 			if (!machine.transitions.containsKey(sourceState)) {
 				machine.transitions.put(sourceState, new PriorityQueue<Transition<T, E, P>>());
 			}

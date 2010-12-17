@@ -8,15 +8,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.laamella.code_state_machine.Action;
+import com.laamella.code_state_machine.Actions;
+import com.laamella.code_state_machine.Transition;
 import com.laamella.code_state_machine.Precondition;
 import com.laamella.code_state_machine.StateMachine;
-import com.laamella.code_state_machine.action.NoAction;
+import com.laamella.code_state_machine.action.LogAction;
 import com.laamella.code_state_machine.precondition.AfterPrecondition;
 import com.laamella.code_state_machine.precondition.AlwaysPrecondition;
 import com.laamella.code_state_machine.precondition.MultiEventMatchPrecondition;
 import com.laamella.code_state_machine.precondition.NeverPrecondition;
 import com.laamella.code_state_machine.precondition.SingleEventMatchPrecondition;
-import com.laamella.code_state_machine.transition.BasicTransition;
 
 /**
  * A pretty "DSL" builder for a state machine.
@@ -38,17 +39,17 @@ public class DslStateMachineBuilder<T, E, P extends Comparable<P>> {
 			return this;
 		}
 
-		public DefiningState onExit(final Action action) {
+		public DefiningState onExit(final Action... action) {
 			for (final T sourceState : sourceStates) {
-				builder.addExitAction(sourceState, action);
+				builder.addExitActions(sourceState, action);
 			}
 			return this;
 		}
 
-		public DefiningState onEntry(final Action action) {
+		public DefiningState onEntry(final Action... action) {
 			for (final T sourceState : sourceStates) {
 				log.debug("Create entry action for {} ({})", sourceState, action);
-				builder.addEntryAction(sourceState, action);
+				builder.addEntryActions(sourceState, action);
 			}
 			return this;
 		}
@@ -87,7 +88,7 @@ public class DslStateMachineBuilder<T, E, P extends Comparable<P>> {
 
 	public class DefiningTransition {
 		private final Precondition<E> storedPrecondition;
-		private Action action = nothing();
+		private final Actions actions = new Actions();
 		private final Set<T> sourceStates;
 		private P priority = defaultPriority;
 
@@ -97,21 +98,27 @@ public class DslStateMachineBuilder<T, E, P extends Comparable<P>> {
 		}
 
 		public DefiningTransition action(final Action action) {
-			this.action = action;
+			this.actions.add(action);
 			return this;
 		}
 
 		public DefiningState then(final T destinationState) {
-			return transition(destinationState, storedPrecondition, action, priority);
+			return transition(destinationState, storedPrecondition, priority, actions);
 		}
 
-		public DefiningState transition(final T destinationState, final Precondition<E> precondition,
-				final Action action, final P priority) {
+		public DefiningState transition(final T destinationState, final Precondition<E> precondition, final P priority,
+				final Actions actions) {
+			this.actions.add(actions);
 			for (final T sourceState : sourceStates) {
-				builder.addTransition(new BasicTransition<T, E, P>(sourceState, destinationState, precondition, action,
-						priority));
+				builder.addTransition(new Transition<T, E, P>(sourceState, destinationState, precondition,
+						priority, this.actions));
 			}
 			return new DefiningState(sourceStates);
+		}
+
+		public DefiningState transition(final T destinationState, final Precondition<E> precondition, final P priority,
+				final Action... actions) {
+			return transition(destinationState, precondition, priority, new Actions(actions));
 		}
 
 		public DefiningTransition withPrio(final P priority) {
@@ -164,8 +171,8 @@ public class DslStateMachineBuilder<T, E, P extends Comparable<P>> {
 		return new MultiEventMatchPrecondition<E>(events);
 	}
 
-	public static Action nothing() {
-		return NoAction.INSTANCE;
+	public static Action log(final String logText) {
+		return new LogAction(logText);
 	}
 
 }
