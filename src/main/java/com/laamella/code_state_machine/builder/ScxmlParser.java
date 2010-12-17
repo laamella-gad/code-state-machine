@@ -134,9 +134,9 @@ public abstract class ScxmlParser<T, E, P extends Comparable<P>> {
 						log.warn("State " + stateName + " has a transition going nowhere.");
 					}
 				} else if (subNodeName.equals("onentry")) {
-					builder.setEntryAction(state, interpretEvent(subNode.getTextContent()));
+					builder.addEntryAction(state, interpretEvent(subNode.getTextContent()));
 				} else if (subNodeName.equals("onexit")) {
-					builder.setExitAction(state, interpretEvent(subNode.getTextContent()));
+					builder.addExitAction(state, interpretEvent(subNode.getTextContent()));
 				}
 			}
 		}

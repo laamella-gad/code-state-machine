@@ -40,7 +40,7 @@ public class DslStateMachineBuilder<T, E, P extends Comparable<P>> {
 
 		public DefiningState onExit(final Action action) {
 			for (final T sourceState : sourceStates) {
-				builder.setExitAction(sourceState, action);
+				builder.addExitAction(sourceState, action);
 			}
 			return this;
 		}
@@ -48,7 +48,7 @@ public class DslStateMachineBuilder<T, E, P extends Comparable<P>> {
 		public DefiningState onEntry(final Action action) {
 			for (final T sourceState : sourceStates) {
 				log.debug("Create entry action for {} ({})", sourceState, action);
-				builder.setEntryAction(sourceState, action);
+				builder.addEntryAction(sourceState, action);
 			}
 			return this;
 		}

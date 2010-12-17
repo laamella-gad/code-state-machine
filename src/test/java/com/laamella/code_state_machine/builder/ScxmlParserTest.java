@@ -36,7 +36,7 @@ public class ScxmlParserTest {
 		};
 		final Builder<String, String, Priority> builder = scxmlParser.parse(new InputSource(ScxmlParser.class
 				.getResourceAsStream("/test.scxml")));
-		System.out.println(new DotOutput<String, String, Priority>(builder.getMetaInformation()).getOutput());
+		System.out.println(new DotOutput<String, String, Priority>().getOutput(builder.getMetaInformation()));
 		//		final StateMachine<String, String, Priority> stateMachine = builder.build();
 	}
 }

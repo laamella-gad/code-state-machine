@@ -7,13 +7,7 @@ import com.laamella.code_state_machine.Transition;
  * Creates a "dot" diagram of the state machine.
  */
 public class DotOutput<T, E, P extends Comparable<P>> {
-	private final StateMachine<T, E, P>.MetaInformation metaInformation;
-
-	public DotOutput(final StateMachine<T, E, P>.MetaInformation metaInformation) {
-		this.metaInformation = metaInformation;
-	}
-
-	public String getOutput() {
+	public String getOutput(final StateMachine<T, E, P>.MetaInformation metaInformation) {
 		final StringBuilder output = new StringBuilder();
 		output.append("digraph finite_state_machine {\n");
 		output.append("\trankdir=LR;\n");

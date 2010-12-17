@@ -1,8 +1,10 @@
 package com.laamella.code_state_machine;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.Queue;
@@ -44,10 +46,8 @@ public class StateMachine<T, E, P extends Comparable<P>> {
 	private final Set<T> startStates = new HashSet<T>();
 	private final Set<T> endStates = new HashSet<T>();
 	private final Set<T> activeStates = new HashSet<T>();
-	// TODO support a list of exit events
-	private final Map<T, Action> exitEvents = new HashMap<T, Action>();
-	// TODO support a list of entry events
-	private final Map<T, Action> entryEvents = new HashMap<T, Action>();
+	private final Map<T, List<Action>> exitEvents = new HashMap<T, List<Action>>();
+	private final Map<T, List<Action>> entryEvents = new HashMap<T, List<Action>>();
 	private final Map<T, Queue<Transition<T, E, P>>> transitions = new HashMap<T, Queue<Transition<T, E, P>>>();
 
 	/**
@@ -125,20 +125,15 @@ public class StateMachine<T, E, P extends Comparable<P>> {
 	 * <ul>
 	 * <li>Ignore transitions that have already fired in this poll().</li>
 	 * <li>For a single source state, find the transition of the highest
-	 * priority which will fire (if any fire at all.) Only consider firing
-	 * transitions for this source state that have this same priority.</li>
+	 * priority which will fire (if any fire at all.) If multiple transitions
+	 * share this priority, fire them all.</li>
 	 * </ul>
 	 * <li>For all states that will be exited, fire the exit state event.</li>
 	 * <li>For all transitions that fire, fire the transition action.</li>
 	 * <li>For all states that will be entered, fire the entry state event.</li>
 	 * </ol>
-	 * <li>... until no transitions have fired.</li>
+	 * <li>... until no new transitions have fired.</li>
 	 * </ul>
-	 * <p/>
-	 * If multiple transitions can fire for a single source state, there is no
-	 * selection step as is usually the case in state machines. The state
-	 * machine will simply fire all of the transitions, entering all of their
-	 * destination states.
 	 * <p/>
 	 * This method prevents itself from looping endlessly on a loop in the state
 	 * machine by only considering transitions that have not fired before in
@@ -191,7 +186,7 @@ public class StateMachine<T, E, P extends Comparable<P>> {
 	private void exitState(final T state) {
 		log.debug("exit state {}", state);
 		if (activeStates.contains(state)) {
-			executeExitAction(state);
+			executeExitActions(state);
 			activeStates.remove(state);
 		}
 	}
@@ -199,7 +194,7 @@ public class StateMachine<T, E, P extends Comparable<P>> {
 	private void enterState(final T newState) {
 		if (endStates.contains(newState)) {
 			log.debug("enter end state {}", newState);
-			executeEntryAction(newState);
+			executeEntryActions(newState);
 			if (activeStates.size() == 0) {
 				log.debug("machine is finished");
 			}
@@ -207,7 +202,7 @@ public class StateMachine<T, E, P extends Comparable<P>> {
 		}
 		if (activeStates.add(newState)) {
 			log.debug("enter state {}", newState);
-			executeEntryAction(newState);
+			executeEntryActions(newState);
 			resetTransitions(newState);
 		}
 	}
@@ -222,17 +217,21 @@ public class StateMachine<T, E, P extends Comparable<P>> {
 		return transitions.get(sourceState);
 	}
 
-	private void executeExitAction(final T state) {
-		final Action action = exitEvents.get(state);
-		if (action != null) {
-			action.execute();
+	private void executeExitActions(final T state) {
+		final List<Action> actions = exitEvents.get(state);
+		if (actions != null) {
+			for (final Action action : actions) {
+				action.execute();
+			}
 		}
 	}
 
-	private void executeEntryAction(final T state) {
-		final Action action = entryEvents.get(state);
-		if (action != null) {
-			action.execute();
+	private void executeEntryActions(final T state) {
+		final List<Action> actions = entryEvents.get(state);
+		if (actions != null) {
+			for (final Action action : actions) {
+				action.execute();
+			}
 		}
 	}
 
@@ -267,6 +266,7 @@ public class StateMachine<T, E, P extends Comparable<P>> {
 			}
 			return transitions;
 		}
+		// TODO complete meta information
 	}
 
 	/**
@@ -285,14 +285,20 @@ public class StateMachine<T, E, P extends Comparable<P>> {
 			return machine.getMetaInformation();
 		}
 
-		public void setExitAction(final T state, final Action action) {
+		public void addExitAction(final T state, final Action action) {
 			log.debug("Create exit action for '{}' ({}) ", state, action);
-			machine.exitEvents.put(state, action);
+			if (!machine.exitEvents.containsKey(state)) {
+				machine.exitEvents.put(state, new ArrayList<Action>(1));
+			}
+			machine.exitEvents.get(state).add(action);
 		}
 
-		public void setEntryAction(final T state, final Action action) {
+		public void addEntryAction(final T state, final Action action) {
 			log.debug("Create entry action for '{}' ({}) ", state, action);
-			machine.entryEvents.put(state, action);
+			if (!machine.entryEvents.containsKey(state)) {
+				machine.entryEvents.put(state, new ArrayList<Action>(1));
+			}
+			machine.entryEvents.get(state).add(action);
 		}
 
 		public void addEndState(final T endState) {
