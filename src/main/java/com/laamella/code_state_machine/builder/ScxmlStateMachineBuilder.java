@@ -60,12 +60,12 @@ import com.laamella.code_state_machine.precondition.AlwaysPrecondition;
  * <td>parallel states (treated as normal states)
  * </tr>
  */
-public abstract class ScxmlParser<T, E, P extends Comparable<P>> {
+public abstract class ScxmlStateMachineBuilder<T, E, P extends Comparable<P>> {
 	private static final String PARALLEL_ELEMENT = "parallel";
 
 	private static final String TRANSITION_ELEMENT = "transition";
 
-	private static final Logger log = LoggerFactory.getLogger(ScxmlParser.class);
+	private static final Logger log = LoggerFactory.getLogger(ScxmlStateMachineBuilder.class);
 
 	private static final String CONDITION_ATTRIBUTE = "cond";
 	private static final String EVENT_ATTRIBUTE = "event";
@@ -80,7 +80,7 @@ public abstract class ScxmlParser<T, E, P extends Comparable<P>> {
 
 	private final P defaultPriority;
 
-	public ScxmlParser(final P defaultPriority) {
+	public ScxmlStateMachineBuilder(final P defaultPriority) {
 		this.defaultPriority = defaultPriority;
 	}
 

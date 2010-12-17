@@ -17,7 +17,7 @@ import com.laamella.code_state_machine.priority.Priority;
 public class ScxmlParserTest {
 	@Test
 	public void readTestScxml() throws ParserConfigurationException, SAXException, IOException {
-		final ScxmlParser<String, String, Priority> scxmlParser = new ScxmlParser<String, String, Priority>(
+		final ScxmlStateMachineBuilder<String, String, Priority> scxmlParser = new ScxmlStateMachineBuilder<String, String, Priority>(
 				Priority.HIGH) {
 			@Override
 			protected String interpretStateName(final String name) {
@@ -34,7 +34,7 @@ public class ScxmlParserTest {
 				return null;
 			}
 		};
-		final Builder<String, String, Priority> builder = scxmlParser.parse(new InputSource(ScxmlParser.class
+		final Builder<String, String, Priority> builder = scxmlParser.parse(new InputSource(ScxmlStateMachineBuilder.class
 				.getResourceAsStream("/test.scxml")));
 		System.out.println(new DotOutput<String, String, Priority>().getOutput(builder.getMetaInformation()));
 		//		final StateMachine<String, String, Priority> stateMachine = builder.build();
