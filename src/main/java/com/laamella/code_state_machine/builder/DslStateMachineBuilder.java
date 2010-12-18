@@ -10,14 +10,14 @@ import org.slf4j.LoggerFactory;
 import com.laamella.code_state_machine.Action;
 import com.laamella.code_state_machine.ActionChain;
 import com.laamella.code_state_machine.Transition;
-import com.laamella.code_state_machine.Precondition;
+import com.laamella.code_state_machine.Condition;
 import com.laamella.code_state_machine.StateMachine;
 import com.laamella.code_state_machine.action.LogAction;
-import com.laamella.code_state_machine.precondition.AfterPrecondition;
-import com.laamella.code_state_machine.precondition.AlwaysPrecondition;
-import com.laamella.code_state_machine.precondition.MultiEventMatchPrecondition;
-import com.laamella.code_state_machine.precondition.NeverPrecondition;
-import com.laamella.code_state_machine.precondition.SingleEventMatchPrecondition;
+import com.laamella.code_state_machine.condition.AfterCondition;
+import com.laamella.code_state_machine.condition.AlwaysCondition;
+import com.laamella.code_state_machine.condition.MultiEventMatchCondition;
+import com.laamella.code_state_machine.condition.NeverCondition;
+import com.laamella.code_state_machine.condition.SingleEventMatchCondition;
 
 /**
  * A pretty "DSL" builder for a state machine.
@@ -76,8 +76,8 @@ public class DslStateMachineBuilder<T, E, P extends Comparable<P>> {
 			return isAStartState();
 		}
 
-		public DefiningTransition when(final Precondition<E> precondition) {
-			return new DefiningTransition(sourceStates, precondition);
+		public DefiningTransition when(final Condition<E> condition) {
+			return new DefiningTransition(sourceStates, condition);
 		}
 
 		public DefiningTransition when(final E... events) {
@@ -87,14 +87,14 @@ public class DslStateMachineBuilder<T, E, P extends Comparable<P>> {
 	}
 
 	public class DefiningTransition {
-		private final Precondition<E> storedPrecondition;
+		private final Condition<E> storedCondition;
 		private final ActionChain actions = new ActionChain();
 		private final Set<T> sourceStates;
 		private P priority = defaultPriority;
 
-		public DefiningTransition(final Set<T> sourceStates, final Precondition<E> precondition) {
+		public DefiningTransition(final Set<T> sourceStates, final Condition<E> condition) {
 			this.sourceStates = sourceStates;
-			this.storedPrecondition = precondition;
+			this.storedCondition = condition;
 		}
 
 		public DefiningTransition action(final Action action) {
@@ -103,22 +103,22 @@ public class DslStateMachineBuilder<T, E, P extends Comparable<P>> {
 		}
 
 		public DefiningState then(final T destinationState) {
-			return transition(destinationState, storedPrecondition, priority, actions);
+			return transition(destinationState, storedCondition, priority, actions);
 		}
 
-		public DefiningState transition(final T destinationState, final Precondition<E> precondition, final P priority,
+		public DefiningState transition(final T destinationState, final Condition<E> condition, final P priority,
 				final ActionChain actions) {
 			this.actions.add(actions);
 			for (final T sourceState : sourceStates) {
-				builder.addTransition(new Transition<T, E, P>(sourceState, destinationState, precondition,
+				builder.addTransition(new Transition<T, E, P>(sourceState, destinationState, condition,
 						priority, this.actions));
 			}
 			return new DefiningState(sourceStates);
 		}
 
-		public DefiningState transition(final T destinationState, final Precondition<E> precondition, final P priority,
+		public DefiningState transition(final T destinationState, final Condition<E> condition, final P priority,
 				final Action... actions) {
-			return transition(destinationState, precondition, priority, new ActionChain(actions));
+			return transition(destinationState, condition, priority, new ActionChain(actions));
 		}
 
 		public DefiningTransition withPrio(final P priority) {
@@ -147,28 +147,28 @@ public class DslStateMachineBuilder<T, E, P extends Comparable<P>> {
 		return new DefiningState(new HashSet<T>(Arrays.asList(states)));
 	}
 
-	public static <E> Precondition<E> always() {
-		return new AlwaysPrecondition<E>();
+	public static <E> Condition<E> always() {
+		return new AlwaysCondition<E>();
 	}
 
-	public static <E> Precondition<E> never() {
-		return new NeverPrecondition<E>();
+	public static <E> Condition<E> never() {
+		return new NeverCondition<E>();
 	}
 
-	public static <E> Precondition<E> after(final long milliseconds) {
-		return new AfterPrecondition<E>(milliseconds);
+	public static <E> Condition<E> after(final long milliseconds) {
+		return new AfterCondition<E>(milliseconds);
 	}
 
-	public static <E> Precondition<E> is(final E... events) {
+	public static <E> Condition<E> is(final E... events) {
 		assert events != null;
 		assert events.length != 0;
 
 		if (events.length == 1) {
 			final E singleEvent = events[0];
-			return new SingleEventMatchPrecondition<E>(singleEvent);
+			return new SingleEventMatchCondition<E>(singleEvent);
 		}
 
-		return new MultiEventMatchPrecondition<E>(events);
+		return new MultiEventMatchCondition<E>(events);
 	}
 
 	public static Action log(final String logText) {

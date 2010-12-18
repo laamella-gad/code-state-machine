@@ -43,7 +43,7 @@ public class PriorityTests {
 	}
 
 	@Test
-	public void normalPriosAreTheOnlyOnesFiringBecauseOtherPrioDoesntMeetPrecondition() {
+	public void normalPriosAreTheOnlyOnesFiringBecauseOtherPrioDoesntMeetCondition() {
 		machineBuilder.state(A).when(always()).transition(B, never(), Priority.HIGH, trace("H"));
 		machineBuilder.state(A).when(always()).transition(B, never(), Priority.NORMAL, trace("N"));
 		machineBuilder.state(A).when(always()).transition(B, always(), Priority.NORMAL, trace("N"));

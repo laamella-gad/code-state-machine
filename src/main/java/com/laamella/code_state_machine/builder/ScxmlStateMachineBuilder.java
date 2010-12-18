@@ -17,10 +17,10 @@ import org.xml.sax.SAXException;
 import com.laamella.code_state_machine.Action;
 import com.laamella.code_state_machine.ActionChain;
 import com.laamella.code_state_machine.Transition;
-import com.laamella.code_state_machine.Precondition;
+import com.laamella.code_state_machine.Condition;
 import com.laamella.code_state_machine.StateMachine;
 import com.laamella.code_state_machine.StateMachine.Builder;
-import com.laamella.code_state_machine.precondition.AlwaysPrecondition;
+import com.laamella.code_state_machine.condition.AlwaysCondition;
 
 /**
  * A State machine builder that attempts to read the SCXML format. Since many
@@ -117,7 +117,7 @@ public abstract class ScxmlStateMachineBuilder<T, E, P extends Comparable<P>> {
 					if (subElement.hasAttribute(TARGET_ATTRIBUTE)) {
 						final T targetState = interpretStateName(subElement.getAttribute(TARGET_ATTRIBUTE));
 
-						Precondition<E> condition = new AlwaysPrecondition<E>();
+						Condition<E> condition = new AlwaysCondition<E>();
 						if (subElement.hasAttribute(CONDITION_ATTRIBUTE)) {
 							condition = interpretCondition(subElement.getAttribute(CONDITION_ATTRIBUTE));
 						}
@@ -145,7 +145,7 @@ public abstract class ScxmlStateMachineBuilder<T, E, P extends Comparable<P>> {
 
 	protected abstract Action interpretEvent(final String attribute);
 
-	protected abstract Precondition<E> interpretCondition(final String attribute);
+	protected abstract Condition<E> interpretCondition(final String attribute);
 
 	protected abstract T interpretStateName(final String name);
 }

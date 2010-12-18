@@ -27,7 +27,7 @@ public class DotOutput<T, E, P extends Comparable<P>> {
 			for (final Transition<T, E, P> transition : metaInformation.getTransitionsForSourceState(sourceState)) {
 				output.append("\t" + sourceState + " -> " + transition.getDestinationState());
 
-				output.append(" [ label = \"" + transition.getPrecondition() + "\" ]");
+				output.append(" [ label = \"" + transition.getCondition() + "\" ]");
 
 				output.append(";\n");
 			}

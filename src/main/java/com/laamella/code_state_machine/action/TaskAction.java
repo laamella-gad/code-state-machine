@@ -2,12 +2,12 @@ package com.laamella.code_state_machine.action;
 
 import java.lang.Thread.State;
 
-import com.laamella.code_state_machine.Precondition;
-import com.laamella.code_state_machine.precondition.NonEventBasedPrecondition;
+import com.laamella.code_state_machine.Condition;
+import com.laamella.code_state_machine.condition.NonEventBasedCondition;
 
 /**
  * This action starts a separate work thread with user code. A transition can
- * wait for this work to be finished by using the isFinished precondition.
+ * wait for this work to be finished by using the isFinished condition.
  * 
  * @param <E>
  *            event type.
@@ -15,12 +15,12 @@ import com.laamella.code_state_machine.precondition.NonEventBasedPrecondition;
 // TODO test
 public abstract class TaskAction<E> implements Runnable, FinishableAction<E> {
 	private Thread taskThread;
-	private NonEventBasedPrecondition<E> finishedPrecondition;
+	private NonEventBasedCondition<E> finishedCondition;
 
 	@Override
 	public final void execute() {
 		taskThread = new Thread(this);
-		finishedPrecondition = new NonEventBasedPrecondition<E>() {
+		finishedCondition = new NonEventBasedCondition<E>() {
 			@Override
 			public boolean isMet() {
 				return taskThread.getState() == State.TERMINATED;
@@ -30,7 +30,7 @@ public abstract class TaskAction<E> implements Runnable, FinishableAction<E> {
 	}
 
 	@Override
-	public final Precondition<E> isFinished() {
-		return finishedPrecondition;
+	public final Condition<E> isFinished() {
+		return finishedCondition;
 	}
 }

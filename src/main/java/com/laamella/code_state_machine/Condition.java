@@ -1,12 +1,12 @@
 package com.laamella.code_state_machine;
 
 /**
- * A way to define a precondition that is met or not.
+ * A way to define a condition that is met or not.
  * 
  * @param <E>
  *            event type.
  */
-public interface Precondition<E> {
+public interface Condition<E> {
 	/**
 	 * Handle an event.
 	 * 
@@ -16,7 +16,7 @@ public interface Precondition<E> {
 	void handleEvent(E event);
 
 	/**
-	 * @return whether the precondition is met.
+	 * @return whether the condition is met.
 	 */
 	boolean isMet();
 

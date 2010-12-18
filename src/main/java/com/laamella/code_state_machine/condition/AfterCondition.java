@@ -1,13 +1,13 @@
-package com.laamella.code_state_machine.precondition;
+package com.laamella.code_state_machine.condition;
 
 /**
- * This precondition is met after a certain amount of milliseconds.
+ * This condition is met after a certain amount of milliseconds.
  */
-public final class AfterPrecondition<E> extends NonEventBasedPrecondition<E> {
+public final class AfterCondition<E> extends NonEventBasedCondition<E> {
 	private final long milliseconds;
 	private long minimalMeetTime;
 
-	public AfterPrecondition(final long milliseconds) {
+	public AfterCondition(final long milliseconds) {
 		this.milliseconds = milliseconds;
 	}
 

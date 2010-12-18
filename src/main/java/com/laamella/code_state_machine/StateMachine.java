@@ -12,20 +12,32 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * A simple state machine.
+ * A programmer friendly state machine.
  * <p/>
  * Features:
  * <ul>
- * <li>It allows multiple start states</li>
- * <li>It allows multiple active states</li>
- * <li>It allows multiple end states</li>
- * <li>Each state can have one entry and one exit state</li>
- * <li>Each transition can have one action</li>
- * <li>It does not do any kind of compilation</li>
- * <li>Its code is easy to understand</li>
- * <li>The state type can be anything</li>
- * <li>The event type can be anything</li>
- * <li>The priority type can be anything as long as it's Comparable</li>
+ * <li>It allows multiple start states.</li>
+ * <li>It allows multiple active states.</li>
+ * <li>It allows multiple end states.</li>
+ * <li>States and their transitions do not have to form a single graph. Separate
+ * graphs may exist inside a single state machine.</li>
+ * <li>Each state has a chain of entry and exit actions.</li>
+ * <li>Each transition has a chain of actions.</li>
+ * <li>It does not do any kind of compilation.</li>
+ * <li>Its code is written in a straightforward way, and is hopefully easy to
+ * understand.</li>
+ * <li>It has a priority system for transitions.</li>
+ * <li>It does not have sub state machines; a state machine is not a state.</li>
+ * <li>It has transitions that use a state machine for their condition.</li>
+ * <li>With the DSL, transitions to a certain state can be added for multiple
+ * source states, thereby faking global transitions.</li>
+ * <li>It tries to put as few constraints as possible on the user.</li>
+ * <li>The state type can be anything.</li>
+ * <li>The event type can be anything.</li>
+ * <li>The priority type can be anything as long as it's Comparable.</li>
+ * <li>It has two, always accessible modes of usage: asking the state machine
+ * for the current state, or having the state machine trigger actions that
+ * change the user code state.
  * </ul>
  * 
  * @param <T>
@@ -106,7 +118,7 @@ public class StateMachine<T, E, P extends Comparable<P>> {
 
 		for (final T sourceState : activeStates) {
 			for (final Transition<T, E, P> transition : findTransitionsForState(sourceState)) {
-				transition.getPrecondition().handleEvent(event);
+				transition.getCondition().handleEvent(event);
 			}
 		}
 		poll();
@@ -156,7 +168,7 @@ public class StateMachine<T, E, P extends Comparable<P>> {
 							// Don't consider these anymore, go to the next source state.
 							break;
 						}
-						if (transition.getPrecondition().isMet()) {
+						if (transition.getCondition().isMet()) {
 							statesToExit.add(sourceState);
 							transitionsToFire.add(transition);
 							statesToEnter.add(transition.getDestinationState());
@@ -213,7 +225,7 @@ public class StateMachine<T, E, P extends Comparable<P>> {
 
 	private void resetTransitions(final T sourceState) {
 		for (final Transition<T, E, P> transition : transitions.get(sourceState)) {
-			transition.getPrecondition().reset();
+			transition.getCondition().reset();
 		}
 	}
 
@@ -305,7 +317,7 @@ public class StateMachine<T, E, P extends Comparable<P>> {
 		public void addTransition(final Transition<T, E, P> transition) {
 			final T sourceState = transition.getSourceState();
 			log.debug("Create transition from '{}' to '{}' (pre: '{}', action: '{}')", new Object[] { sourceState,
-					transition.getDestinationState(), transition.getPrecondition(), transition.getActions() });
+					transition.getDestinationState(), transition.getCondition(), transition.getActions() });
 			if (!machine.transitions.containsKey(sourceState)) {
 				machine.transitions.put(sourceState, new PriorityQueue<Transition<T, E, P>>());
 			}

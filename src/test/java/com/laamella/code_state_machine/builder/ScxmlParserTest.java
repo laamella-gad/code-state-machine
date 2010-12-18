@@ -9,7 +9,7 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 import com.laamella.code_state_machine.Action;
-import com.laamella.code_state_machine.Precondition;
+import com.laamella.code_state_machine.Condition;
 import com.laamella.code_state_machine.StateMachine.Builder;
 import com.laamella.code_state_machine.io.DotOutput;
 import com.laamella.code_state_machine.priority.Priority;
@@ -30,7 +30,7 @@ public class ScxmlParserTest {
 			}
 
 			@Override
-			protected Precondition<String> interpretCondition(final String attribute) {
+			protected Condition<String> interpretCondition(final String attribute) {
 				return null;
 			}
 		};
