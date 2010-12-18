@@ -16,6 +16,7 @@ import org.slf4j.LoggerFactory;
  * <p/>
  * Features:
  * <ul>
+ * <li>It is non-deterministic.</li>
  * <li>It allows multiple start states.</li>
  * <li>It allows multiple active states.</li>
  * <li>It allows multiple end states.</li>
@@ -263,14 +264,7 @@ public class StateMachine<T, E, P extends Comparable<P>> {
 		}
 
 		public Set<Transition<T, E, P>> getTransitionsForSourceState(final T sourceState) {
-			// TODO looks like this can be made a lot simpler.
-			final Set<Transition<T, E, P>> transitions = new HashSet<Transition<T, E, P>>();
-			if (StateMachine.this.transitions.containsKey(sourceState)) {
-				for (final Transition<T, E, P> transition : StateMachine.this.transitions.get(sourceState)) {
-					transitions.add(transition);
-				}
-			}
-			return transitions;
+			return getTransitionsForSourceState(sourceState);
 		}
 		// TODO complete meta information
 	}
@@ -279,6 +273,7 @@ public class StateMachine<T, E, P extends Comparable<P>> {
 	 * The basic builder of the state machine. Other builders can use this to
 	 * deliver nicer syntax.
 	 */
+	// FIXME this is hardly a builder. Merge with MetaInformation.
 	public static class Builder<T, E, P extends Comparable<P>> {
 		private final StateMachine<T, E, P> machine;
 
@@ -324,6 +319,10 @@ public class StateMachine<T, E, P extends Comparable<P>> {
 			machine.transitions.get(sourceState).add(transition);
 		}
 
+		/**
+		 * @return the machine. Note that a single builder instance will always
+		 *         return the same machine instance.
+		 */
 		public StateMachine<T, E, P> build() {
 			log.debug("Done building new machine");
 			machine.reset();
