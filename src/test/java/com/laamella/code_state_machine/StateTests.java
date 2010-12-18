@@ -58,7 +58,7 @@ public class StateTests {
 	@Before
 	public void before() {
 		gameMachine = new GameMachineBuilder().buildMachine();
-		log.trace("\n" + new DotOutput<GameState, GameEvent, Priority>().getOutput(gameMachine.getMetaInformation()));
+		log.trace("\n" + new DotOutput<GameState, GameEvent, Priority>().getOutput(gameMachine));
 	}
 
 	@Test

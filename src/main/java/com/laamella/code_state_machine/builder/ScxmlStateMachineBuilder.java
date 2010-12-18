@@ -16,10 +16,9 @@ import org.xml.sax.SAXException;
 
 import com.laamella.code_state_machine.Action;
 import com.laamella.code_state_machine.ActionChain;
-import com.laamella.code_state_machine.Transition;
 import com.laamella.code_state_machine.Condition;
 import com.laamella.code_state_machine.StateMachine;
-import com.laamella.code_state_machine.StateMachine.Builder;
+import com.laamella.code_state_machine.Transition;
 import com.laamella.code_state_machine.condition.AlwaysCondition;
 
 /**
@@ -84,17 +83,17 @@ public abstract class ScxmlStateMachineBuilder<T, E, P extends Comparable<P>> {
 		this.defaultPriority = defaultPriority;
 	}
 
-	public StateMachine.Builder<T, E, P> parse(final InputSource xml) throws ParserConfigurationException,
-			SAXException, IOException {
-		final Builder<T, E, P> builder = new StateMachine.Builder<T, E, P>();
+	public StateMachine<T, E, P> parse(final InputSource xml) throws ParserConfigurationException, SAXException,
+			IOException {
+		final StateMachine<T, E, P> machine = new StateMachine<T, E, P>();
 		final DocumentBuilder documentBuilder = documentBuilderFactory.newDocumentBuilder();
 		final Element root = (Element) documentBuilder.parse(xml).getChildNodes().item(0);
 
-		parseState(root, builder);
-		return builder;
+		parseState(root, machine.new Internals());
+		return machine;
 	}
 
-	private T parseState(final Element stateElement, final Builder<T, E, P> builder) {
+	private T parseState(final Element stateElement, final StateMachine<T, E, P>.Internals builder) {
 		if (stateElement.hasAttribute(INITIAL_ATTRIBUTE)) {
 			final T initialState = interpretStateName(stateElement.getAttribute(INITIAL_ATTRIBUTE));
 			builder.addStartState(initialState);
@@ -128,8 +127,8 @@ public abstract class ScxmlStateMachineBuilder<T, E, P extends Comparable<P>> {
 						}
 
 						// TODO do something about priorities
-						builder.addTransition(new Transition<T, E, P>(state, targetState, condition,
-								defaultPriority, actions));
+						builder.addTransition(new Transition<T, E, P>(state, targetState, condition, defaultPriority,
+								actions));
 					} else {
 						log.warn("State " + stateName + " has a transition going nowhere.");
 					}

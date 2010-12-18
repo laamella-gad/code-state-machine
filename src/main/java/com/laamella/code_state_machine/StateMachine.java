@@ -1,6 +1,5 @@
 package com.laamella.code_state_machine;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -62,9 +61,10 @@ public class StateMachine<T, E, P extends Comparable<P>> {
 	private final Map<T, Queue<Transition<T, E, P>>> transitions = new HashMap<T, Queue<Transition<T, E, P>>>();
 
 	/**
-	 * This class can only be created through its builder.
+	 * Create a new, empty state machine. To fill it, use the internals, or use
+	 * one of the builders.
 	 */
-	private StateMachine() {
+	public StateMachine() {
 		log.debug("New Machine");
 	}
 
@@ -83,10 +83,10 @@ public class StateMachine<T, E, P extends Comparable<P>> {
 	}
 
 	/**
-	 * @return an immutable set of all active states.
+	 * @return a set of all active states.
 	 */
 	public Set<T> getActiveStates() {
-		return Collections.unmodifiableSet(activeStates);
+		return activeStates;
 	}
 
 	/**
@@ -243,96 +243,92 @@ public class StateMachine<T, E, P extends Comparable<P>> {
 	}
 
 	/**
-	 * @return meta information about the internals of the state machine.
-	 *         Calling this should not be necessary for normal operation.
+	 * Gives access to the internals of the state machine.
 	 */
-	public MetaInformation getMetaInformation() {
-		return this.new MetaInformation();
-	}
-
-	public class MetaInformation {
+	public class Internals {
+		/**
+		 * @return the end states.
+		 */
 		public Set<T> getEndStates() {
 			return new HashSet<T>(StateMachine.this.endStates);
 		}
 
+		/**
+		 * @return the start states.
+		 */
 		public Set<T> getStartStates() {
 			return new HashSet<T>(StateMachine.this.startStates);
 		}
 
+		/**
+		 * @return the states that have outgoing transitions defined.
+		 */
 		public Set<T> getSourceStates() {
 			return new HashSet<T>(StateMachine.this.transitions.keySet());
 		}
 
-		public Set<Transition<T, E, P>> getTransitionsForSourceState(final T sourceState) {
-			return getTransitionsForSourceState(sourceState);
+		/**
+		 * @return the outgoing transitions for a source state.
+		 */
+		public Queue<Transition<T, E, P>> getTransitionsForSourceState(final T sourceState) {
+			return StateMachine.this.findTransitionsForState(sourceState);
 		}
+
 		// TODO complete meta information
-	}
 
-	/**
-	 * The basic builder of the state machine. Other builders can use this to
-	 * deliver nicer syntax.
-	 */
-	// FIXME this is hardly a builder. Merge with MetaInformation.
-	public static class Builder<T, E, P extends Comparable<P>> {
-		private final StateMachine<T, E, P> machine;
-
-		public Builder() {
-			log.debug("Start building new machine");
-			machine = new StateMachine<T, E, P>();
-		}
-
-		public StateMachine<T, E, P>.MetaInformation getMetaInformation() {
-			return machine.getMetaInformation();
-		}
-
+		/**
+		 * Add 0 or more actions to be executed when the state is exited.
+		 */
 		public void addExitActions(final T state, final Action... action) {
 			log.debug("Create exit action for '{}' ({}) ", state, action);
-			if (!machine.exitEvents.containsKey(state)) {
-				machine.exitEvents.put(state, new ActionChain(action));
+			if (!exitEvents.containsKey(state)) {
+				exitEvents.put(state, new ActionChain(action));
 				return;
 			}
-			machine.exitEvents.get(state).add(action);
+			exitEvents.get(state).add(action);
 		}
 
+		/**
+		 * Add 0 or more actions to be executed when the state is entered.
+		 */
 		public void addEntryActions(final T state, final Action... action) {
 			log.debug("Create entry action for '{}' ({}) ", state, action);
-			if (!machine.entryEvents.containsKey(state)) {
-				machine.entryEvents.put(state, new ActionChain(action));
+			if (!entryEvents.containsKey(state)) {
+				entryEvents.put(state, new ActionChain(action));
 				return;
 			}
-			machine.entryEvents.get(state).add(action);
+			entryEvents.get(state).add(action);
 		}
 
+		/**
+		 * Add an end state.
+		 */
 		public void addEndState(final T endState) {
 			log.debug("Add end state '{}'", endState);
-			machine.endStates.add(endState);
+			endStates.add(endState);
 		}
 
+		/**
+		 * Add a transition.
+		 */
 		public void addTransition(final Transition<T, E, P> transition) {
 			final T sourceState = transition.getSourceState();
 			log.debug("Create transition from '{}' to '{}' (pre: '{}', action: '{}')", new Object[] { sourceState,
 					transition.getDestinationState(), transition.getCondition(), transition.getActions() });
-			if (!machine.transitions.containsKey(sourceState)) {
-				machine.transitions.put(sourceState, new PriorityQueue<Transition<T, E, P>>());
+			if (!transitions.containsKey(sourceState)) {
+				transitions.put(sourceState, new PriorityQueue<Transition<T, E, P>>());
 			}
-			machine.transitions.get(sourceState).add(transition);
+			transitions.get(sourceState).add(transition);
 		}
 
 		/**
-		 * @return the machine. Note that a single builder instance will always
-		 *         return the same machine instance.
+		 * Adds a start state, and immediately activates it.
 		 */
-		public StateMachine<T, E, P> build() {
-			log.debug("Done building new machine");
-			machine.reset();
-			return machine;
-		}
-
 		public void addStartState(final T startState) {
 			log.debug("Add start state '{}'", startState);
-			machine.startStates.add(startState);
+			startStates.add(startState);
+			activeStates.add(startState);
 		}
-
 	}
+
 }

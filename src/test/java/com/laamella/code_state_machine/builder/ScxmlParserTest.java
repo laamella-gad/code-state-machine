@@ -10,7 +10,7 @@ import org.xml.sax.SAXException;
 
 import com.laamella.code_state_machine.Action;
 import com.laamella.code_state_machine.Condition;
-import com.laamella.code_state_machine.StateMachine.Builder;
+import com.laamella.code_state_machine.StateMachine;
 import com.laamella.code_state_machine.io.DotOutput;
 import com.laamella.code_state_machine.priority.Priority;
 
@@ -34,9 +34,9 @@ public class ScxmlParserTest {
 				return null;
 			}
 		};
-		final Builder<String, String, Priority> builder = scxmlParser.parse(new InputSource(ScxmlStateMachineBuilder.class
-				.getResourceAsStream("/test.scxml")));
-		System.out.println(new DotOutput<String, String, Priority>().getOutput(builder.getMetaInformation()));
+		final StateMachine<String, String, Priority> builder = scxmlParser.parse(new InputSource(
+				ScxmlStateMachineBuilder.class.getResourceAsStream("/test.scxml")));
+		System.out.println(new DotOutput<String, String, Priority>().getOutput(builder));
 		//		final StateMachine<String, String, Priority> stateMachine = builder.build();
 	}
 }

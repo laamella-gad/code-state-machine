@@ -34,7 +34,7 @@ public class AutomaticFiringTests {
 				state(E).isAnEndState();
 			}
 		}.buildMachine();
-		log.trace("\n" + new DotOutput<SimpleState, Object, Priority>().getOutput(machine.getMetaInformation()));
+		log.trace("\n" + new DotOutput<SimpleState, Object, Priority>().getOutput(machine));
 	}
 
 	@Test
