@@ -30,34 +30,34 @@ import com.laamella.code_state_machine.priority.Priority;
 public class StateTests {
 	private static final Logger log = LoggerFactory.getLogger(StateTests.class);
 
-	private static class GameMachineBuilder extends DslStateMachineBuilder<GameState, GameEvent, Priority> {
-		public GameMachineBuilder() {
-			super(Priority.NORMAL);
-			state(LOADER).onExit(log("exit!")).onEntry(log("enter!"));
-
-			state(LOADER).isAStartState().when(DONE).action(log("bing!")).then(INTRO);
-			state(INTRO).when(DONE).then(MENU);
-			state(MENU).when(START).then(GET_READY).when(ESCAPE).then(EXIT);
-			state(GET_READY).when(DONE).then(LEVEL);
-			state(LEVEL_FINISH).when(DONE).then(GET_READY);
-			state(LEVEL).when(DEAD).then(GAME_OVER).when(COMPLETE).then(LEVEL_FINISH);
-			state(GAME_OVER).when(DONE).then(MENU);
-			states(GameState.values()).except(MENU, LOADER, EXIT).when(ESCAPE).then(MENU);
-
-			state(MENU).when(FIRE_A, FIRE_B).then(CONFIGURATION);
-			state(CONFIGURATION).when(FIRE_A, FIRE_B).then(MENU);
-
-			state(CONFIGURATION).when(FIRE_A).then(INTRO);
-
-			state(EXIT).isAnEndState();
-		}
-	}
-
 	private StateMachine<GameState, GameEvent, Priority> gameMachine;
 
 	@Before
 	public void before() {
-		gameMachine = new GameMachineBuilder().buildMachine();
+		final DslStateMachineBuilder<GameState, GameEvent, Priority> gameMachineBuilder = new DslStateMachineBuilder<GameState, GameEvent, Priority>(
+				Priority.NORMAL) {
+			@Override
+			protected void executeBuildInstructions() {
+				state(LOADER).onExit(log("exit!")).onEntry(log("enter!"));
+
+				state(LOADER).isAStartState().when(DONE).action(log("bing!")).then(INTRO);
+				state(INTRO).when(DONE).then(MENU);
+				state(MENU).when(START).then(GET_READY).when(ESCAPE).then(EXIT);
+				state(GET_READY).when(DONE).then(LEVEL);
+				state(LEVEL_FINISH).when(DONE).then(GET_READY);
+				state(LEVEL).when(DEAD).then(GAME_OVER).when(COMPLETE).then(LEVEL_FINISH);
+				state(GAME_OVER).when(DONE).then(MENU);
+				states(GameState.values()).except(MENU, LOADER, EXIT).when(ESCAPE).then(MENU);
+
+				state(MENU).when(FIRE_A, FIRE_B).then(CONFIGURATION);
+				state(CONFIGURATION).when(FIRE_A, FIRE_B).then(MENU);
+
+				state(CONFIGURATION).when(FIRE_A).then(INTRO);
+
+				state(EXIT).isAnEndState();
+			}
+		};
+		gameMachine = gameMachineBuilder.build();
 		log.trace("\n" + new DotOutput<GameState, GameEvent, Priority>().getOutput(gameMachine));
 	}
 

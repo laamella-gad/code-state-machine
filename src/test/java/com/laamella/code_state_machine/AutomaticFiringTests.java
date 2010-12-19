@@ -26,14 +26,15 @@ public class AutomaticFiringTests {
 	@Before
 	public void before() {
 		machine = new DslStateMachineBuilder<SimpleState, Object, Priority>(Priority.NORMAL) {
-			{
+			@Override
+			protected void executeBuildInstructions() {
 				state(A).isAStartState().when(always()).then(B);
 				state(B).when(always()).then(C);
 				state(C).when(always()).then(D);
 				state(D).when(always()).then(E);
 				state(E).isAnEndState();
 			}
-		}.buildMachine();
+		}.build(new StateMachine<SimpleState, Object, Priority>());
 		log.trace("\n" + new DotOutput<SimpleState, Object, Priority>().getOutput(machine));
 	}
 

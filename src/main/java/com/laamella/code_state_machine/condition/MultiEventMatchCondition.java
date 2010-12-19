@@ -11,7 +11,7 @@ import java.util.Set;
 public final class MultiEventMatchCondition<E> extends EventBasedCondition<E> {
 	private final Set<E> matchEvents;
 
-	public MultiEventMatchCondition(final E[] events) {
+	public MultiEventMatchCondition(final E... events) {
 		matchEvents = new HashSet<E>(Arrays.asList(events));
 	}
 

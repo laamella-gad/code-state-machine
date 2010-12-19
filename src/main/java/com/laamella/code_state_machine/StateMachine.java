@@ -15,7 +15,7 @@ import org.slf4j.LoggerFactory;
  * <p/>
  * Features:
  * <ul>
- * <li>It is non-deterministic.</li>
+ * <li>It is non-deterministic, but has the tools to become deterministic.</li>
  * <li>It allows multiple start states.</li>
  * <li>It allows multiple active states.</li>
  * <li>It allows multiple end states.</li>
@@ -32,6 +32,8 @@ import org.slf4j.LoggerFactory;
  * <li>With the DSL, transitions to a certain state can be added for multiple
  * source states, thereby faking global transitions.</li>
  * <li>It tries to put as few constraints as possible on the user.</li>
+ * <li>It has only one dependency: slf4j for logging, which can be configured to
+ * use any other logging framework.</li>
  * <li>The state type can be anything.</li>
  * <li>The event type can be anything.</li>
  * <li>The priority type can be anything as long as it's Comparable.</li>
@@ -56,8 +58,8 @@ public class StateMachine<T, E, P extends Comparable<P>> {
 	private final Set<T> startStates = new HashSet<T>();
 	private final Set<T> endStates = new HashSet<T>();
 	private final Set<T> activeStates = new HashSet<T>();
-	private final Map<T, ActionChain> exitEvents = new HashMap<T, ActionChain>();
-	private final Map<T, ActionChain> entryEvents = new HashMap<T, ActionChain>();
+	private final Map<T, Actions> exitEvents = new HashMap<T, Actions>();
+	private final Map<T, Actions> entryEvents = new HashMap<T, Actions>();
 	private final Map<T, Queue<Transition<T, E, P>>> transitions = new HashMap<T, Queue<Transition<T, E, P>>>();
 
 	/**
@@ -194,7 +196,7 @@ public class StateMachine<T, E, P extends Comparable<P>> {
 		} while (stillNewTransitionsFiring);
 	}
 
-	private void executeActions(final ActionChain actions) {
+	private void executeActions(final Actions actions) {
 		if (actions != null) {
 			actions.execute();
 		}
@@ -282,7 +284,7 @@ public class StateMachine<T, E, P extends Comparable<P>> {
 		public void addExitActions(final T state, final Action... action) {
 			log.debug("Create exit action for '{}' ({}) ", state, action);
 			if (!exitEvents.containsKey(state)) {
-				exitEvents.put(state, new ActionChain(action));
+				exitEvents.put(state, new Actions(action));
 				return;
 			}
 			exitEvents.get(state).add(action);
@@ -294,7 +296,7 @@ public class StateMachine<T, E, P extends Comparable<P>> {
 		public void addEntryActions(final T state, final Action... action) {
 			log.debug("Create entry action for '{}' ({}) ", state, action);
 			if (!entryEvents.containsKey(state)) {
-				entryEvents.put(state, new ActionChain(action));
+				entryEvents.put(state, new Actions(action));
 				return;
 			}
 			entryEvents.get(state).add(action);
@@ -328,6 +330,13 @@ public class StateMachine<T, E, P extends Comparable<P>> {
 			log.debug("Add start state '{}'", startState);
 			startStates.add(startState);
 			activeStates.add(startState);
+		}
+
+		/**
+		 * @return the statemachine whose internals these are.
+		 */
+		public StateMachine<T, E, P> getStateMachine() {
+			return StateMachine.this;
 		}
 	}
 

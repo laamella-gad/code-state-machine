@@ -15,15 +15,17 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 import com.laamella.code_state_machine.Action;
-import com.laamella.code_state_machine.ActionChain;
+import com.laamella.code_state_machine.Actions;
 import com.laamella.code_state_machine.Condition;
+import com.laamella.code_state_machine.Conditions;
 import com.laamella.code_state_machine.StateMachine;
 import com.laamella.code_state_machine.Transition;
-import com.laamella.code_state_machine.condition.AlwaysCondition;
+import com.laamella.code_state_machine.priority.PriorityDeterminizer;
 
 /**
- * A State machine builder that attempts to read the SCXML format. Since many
- * features are mismatched, it does not do a very good job.
+ * A State machine builder that attempts to read the <a
+ * href="http://www.w3.org/TR/scxml/">SCXML</a> format. Since many features are
+ * mismatched, it does not do a very good job.
  * <table>
  * <tr>
  * <td>Supported?
@@ -47,8 +49,8 @@ import com.laamella.code_state_machine.condition.AlwaysCondition;
  * </tr>
  * <tr>
  * <td>&#x2717;
- * <td>clusters (treated as normal states. Substates are mixed into the main
- * state machine)
+ * <td>clusters, compound states, or sub state machines (treated as normal
+ * states. Substates are mixed into the main state machine)
  * </tr>
  * <tr>
  * <td>&#x2717;
@@ -59,13 +61,11 @@ import com.laamella.code_state_machine.condition.AlwaysCondition;
  * <td>parallel states (treated as normal states)
  * </tr>
  */
-public abstract class ScxmlStateMachineBuilder<T, E, P extends Comparable<P>> {
-	private static final String PARALLEL_ELEMENT = "parallel";
-
-	private static final String TRANSITION_ELEMENT = "transition";
-
+public abstract class ScxmlStateMachineBuilder<T, E> implements StateMachineBuilder<T, E, Integer> {
 	private static final Logger log = LoggerFactory.getLogger(ScxmlStateMachineBuilder.class);
 
+	private static final String TRANSITION_ELEMENT = "transition";
+	private static final String PARALLEL_ELEMENT = "parallel";
 	private static final String CONDITION_ATTRIBUTE = "cond";
 	private static final String EVENT_ATTRIBUTE = "event";
 	private static final String TARGET_ATTRIBUTE = "target";
@@ -77,23 +77,28 @@ public abstract class ScxmlStateMachineBuilder<T, E, P extends Comparable<P>> {
 
 	private final DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
 
-	private final P defaultPriority;
+	private final InputSource inputSource;
 
-	public ScxmlStateMachineBuilder(final P defaultPriority) {
-		this.defaultPriority = defaultPriority;
+	public ScxmlStateMachineBuilder(final InputSource inputSource) {
+		this.inputSource = inputSource;
 	}
 
-	public StateMachine<T, E, P> parse(final InputSource xml) throws ParserConfigurationException, SAXException,
-			IOException {
-		final StateMachine<T, E, P> machine = new StateMachine<T, E, P>();
+	@Override
+	public StateMachine<T, E, Integer> build(final StateMachine<T, E, Integer> machine)
+			throws ParserConfigurationException, SAXException, IOException {
 		final DocumentBuilder documentBuilder = documentBuilderFactory.newDocumentBuilder();
-		final Element root = (Element) documentBuilder.parse(xml).getChildNodes().item(0);
+		final Element root = (Element) documentBuilder.parse(inputSource).getChildNodes().item(0);
 
 		parseState(root, machine.new Internals());
 		return machine;
 	}
 
-	private T parseState(final Element stateElement, final StateMachine<T, E, P>.Internals builder) {
+	@Override
+	public StateMachine<T, E, Integer> build() throws ParserConfigurationException, SAXException, IOException {
+		return build(new StateMachine<T, E, Integer>());
+	}
+
+	private T parseState(final Element stateElement, final StateMachine<T, E, Integer>.Internals builder) {
 		if (stateElement.hasAttribute(INITIAL_ATTRIBUTE)) {
 			final T initialState = interpretStateName(stateElement.getAttribute(INITIAL_ATTRIBUTE));
 			builder.addStartState(initialState);
@@ -116,19 +121,19 @@ public abstract class ScxmlStateMachineBuilder<T, E, P extends Comparable<P>> {
 					if (subElement.hasAttribute(TARGET_ATTRIBUTE)) {
 						final T targetState = interpretStateName(subElement.getAttribute(TARGET_ATTRIBUTE));
 
-						Condition<E> condition = new AlwaysCondition<E>();
+						final Conditions<E> conditions = new Conditions<E>();
 						if (subElement.hasAttribute(CONDITION_ATTRIBUTE)) {
-							condition = interpretCondition(subElement.getAttribute(CONDITION_ATTRIBUTE));
+							conditions.add(interpretCondition(subElement.getAttribute(CONDITION_ATTRIBUTE)));
 						}
 
-						final ActionChain actions = new ActionChain();
+						final Actions actions = new Actions();
 						if (subElement.hasAttribute(EVENT_ATTRIBUTE)) {
 							actions.add(interpretEvent(subElement.getAttribute(EVENT_ATTRIBUTE)));
 						}
 
 						// TODO do something about priorities
-						builder.addTransition(new Transition<T, E, P>(state, targetState, condition, defaultPriority,
-								actions));
+						builder.addTransition(new Transition<T, E, Integer>(state, targetState, conditions,
+								PriorityDeterminizer.nextPriority(), actions));
 					} else {
 						log.warn("State " + stateName + " has a transition going nowhere.");
 					}
@@ -147,4 +152,5 @@ public abstract class ScxmlStateMachineBuilder<T, E, P extends Comparable<P>> {
 	protected abstract Condition<E> interpretCondition(final String attribute);
 
 	protected abstract T interpretStateName(final String name);
+
 }

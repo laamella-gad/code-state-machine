@@ -13,6 +13,13 @@ import com.laamella.code_state_machine.StateMachine;
 public final class SubStateMachineCondition<T, E, P extends Comparable<P>> extends EventBasedCondition<E> {
 	private final StateMachine<T, E, P> stateMachine;
 
+	/**
+	 * @param stateMachine
+	 *            the state machine to use. Note that using the same state
+	 *            machine for multiple conditions will not magically clone it,
+	 *            it still is the same machine with the same state in all
+	 *            conditions.
+	 */
 	public SubStateMachineCondition(final StateMachine<T, E, P> stateMachine) {
 		this.stateMachine = stateMachine;
 	}

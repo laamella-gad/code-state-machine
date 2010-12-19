@@ -11,14 +11,17 @@ import org.xml.sax.SAXException;
 import com.laamella.code_state_machine.Action;
 import com.laamella.code_state_machine.Condition;
 import com.laamella.code_state_machine.StateMachine;
+import com.laamella.code_state_machine.action.LogAction;
+import com.laamella.code_state_machine.condition.AlwaysCondition;
 import com.laamella.code_state_machine.io.DotOutput;
-import com.laamella.code_state_machine.priority.Priority;
 
 public class ScxmlParserTest {
 	@Test
 	public void readTestScxml() throws ParserConfigurationException, SAXException, IOException {
-		final ScxmlStateMachineBuilder<String, String, Priority> scxmlParser = new ScxmlStateMachineBuilder<String, String, Priority>(
-				Priority.HIGH) {
+		final InputSource inputSource = new InputSource(
+				ScxmlStateMachineBuilder.class.getResourceAsStream("/test.scxml"));
+		final ScxmlStateMachineBuilder<String, String> scxmlParser = new ScxmlStateMachineBuilder<String, String>(
+				inputSource) {
 			@Override
 			protected String interpretStateName(final String name) {
 				return name;
@@ -26,17 +29,17 @@ public class ScxmlParserTest {
 
 			@Override
 			protected Action interpretEvent(final String attribute) {
-				return null;
+				return new LogAction(attribute);
 			}
 
 			@Override
 			protected Condition<String> interpretCondition(final String attribute) {
-				return null;
+				return new AlwaysCondition<String>();
 			}
 		};
-		final StateMachine<String, String, Priority> builder = scxmlParser.parse(new InputSource(
-				ScxmlStateMachineBuilder.class.getResourceAsStream("/test.scxml")));
-		System.out.println(new DotOutput<String, String, Priority>().getOutput(builder));
+		final StateMachine<String, String, Integer> stateMachine = scxmlParser.build();
+		System.out.println(new DotOutput<String, String, Integer>().getOutput(stateMachine));
 		//		final StateMachine<String, String, Priority> stateMachine = builder.build();
+		// TODO finish tests
 	}
 }

@@ -1,11 +1,11 @@
 package com.laamella.code_state_machine.io;
 
 import com.laamella.code_state_machine.StateMachine;
-import com.laamella.code_state_machine.StateMachine.Internals;
 import com.laamella.code_state_machine.Transition;
 
 /**
- * Creates a "dot" diagram of the state machine.
+ * Creates a simple "dot" diagram of the state machine. Start states are double
+ * circles, end states are dotted circles, entry and exit events are not shown.
  */
 public class DotOutput<T, E, P extends Comparable<P>> {
 	public String getOutput(final StateMachine<T, E, P> machine) {
@@ -15,23 +15,25 @@ public class DotOutput<T, E, P extends Comparable<P>> {
 		output.append("digraph finite_state_machine {\n");
 		output.append("\trankdir=LR;\n");
 		output.append("\tsize=\"8,5\"\n");
-		output.append("\tnode [shape = doublecircle, style=solid];");
-		for (final T startState : internals.getStartStates()) {
-			output.append(" " + startState);
+		if (!internals.getStartStates().isEmpty()) {
+			output.append("\tnode [shape = doublecircle, style=solid];");
+			for (final T startState : internals.getStartStates()) {
+				output.append(" " + startState);
+			}
+			output.append(";\n");
 		}
-		output.append(";\n");
-		output.append("\tnode [shape = circle, style=dotted];");
-		for (final T startState : internals.getEndStates()) {
-			output.append(" " + startState);
+		if (!internals.getEndStates().isEmpty()) {
+			output.append("\tnode [shape = circle, style=dotted];");
+			for (final T startState : internals.getEndStates()) {
+				output.append(" " + startState);
+			}
+			output.append(";\n");
 		}
-		output.append(";\n");
 		output.append("\tnode [shape = circle, style=solid];\n");
 		for (final T sourceState : internals.getSourceStates()) {
 			for (final Transition<T, E, P> transition : internals.getTransitionsForSourceState(sourceState)) {
 				output.append("\t" + sourceState + " -> " + transition.getDestinationState());
-
 				output.append(" [ label = \"" + transition.getCondition() + "\" ]");
-
 				output.append(";\n");
 			}
 		}

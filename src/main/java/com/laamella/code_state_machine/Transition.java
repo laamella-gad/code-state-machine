@@ -13,21 +13,21 @@ package com.laamella.code_state_machine;
 public class Transition<T, E, P extends Comparable<P>> implements Comparable<Transition<T, E, P>> {
 	private final T destinationState;
 	private final T sourceState;
-	private final Condition<E> condition;
-	private final ActionChain action;
+	private final Conditions<E> conditions;
+	private final Actions action;
 	private final P priority;
 
-	public Transition(final T sourceState, final T destinationState, final Condition<E> condition, final P priority,
-			final ActionChain actions) {
+	public Transition(final T sourceState, final T destinationState, final Conditions<E> conditions, final P priority,
+			final Actions actions) {
 		assert destinationState != null;
 		assert sourceState != null;
-		assert condition != null;
+		assert conditions != null;
 		assert actions != null;
 		assert priority != null;
 
 		this.destinationState = destinationState;
 		this.sourceState = sourceState;
-		this.condition = condition;
+		this.conditions = conditions;
 		this.action = actions;
 		this.priority = priority;
 	}
@@ -50,15 +50,15 @@ public class Transition<T, E, P extends Comparable<P>> implements Comparable<Tra
 	 * @return The actions that will be executed when this transition fires.
 	 *         Never null.
 	 */
-	public ActionChain getActions() {
+	public Actions getActions() {
 		return action;
 	}
 
 	/**
 	 * @return the condition that must be met for this transition to fire.
 	 */
-	public Condition<E> getCondition() {
-		return condition;
+	public Conditions<E> getCondition() {
+		return conditions;
 	}
 
 	/**
@@ -84,6 +84,6 @@ public class Transition<T, E, P extends Comparable<P>> implements Comparable<Tra
 	@Override
 	public String toString() {
 		return String.format("Transition from %s to %s, condition %s, action %s, priority %s", sourceState,
-				destinationState, condition, action, priority);
+				destinationState, conditions, action, priority);
 	}
 }

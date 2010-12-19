@@ -1,7 +1,5 @@
 package com.laamella.code_state_machine;
 
-import static com.laamella.code_state_machine.builder.DslStateMachineBuilder.always;
-import static com.laamella.code_state_machine.builder.DslStateMachineBuilder.never;
 import static com.laamella.code_state_machine.util.SimpleState.A;
 import static com.laamella.code_state_machine.util.SimpleState.B;
 import static org.junit.Assert.assertEquals;
@@ -16,16 +14,17 @@ import com.laamella.code_state_machine.util.SimpleState;
 public class PriorityTests {
 	private final StringBuffer trace = new StringBuffer();
 
-	private DslStateMachineBuilder<SimpleState, Object, Priority> machineBuilder;
+	private StateMachine<SimpleState, Object, Priority> machine;
 
 	@Before
 	public void before() {
-		machineBuilder = new DslStateMachineBuilder<SimpleState, Object, Priority>(Priority.NORMAL) {
-			{
+		machine = new DslStateMachineBuilder<SimpleState, Object, Priority>(Priority.NORMAL) {
+			@Override
+			protected void executeBuildInstructions() {
 				state(A).isAStartState();
 				state(B).isAnEndState();
 			}
-		};
+		}.build();
 	}
 
 	private TraceAction trace(final String signature) {
@@ -34,32 +33,47 @@ public class PriorityTests {
 
 	@Test
 	public void highPrioIsTheOnlyOneFiring() {
-		machineBuilder.state(A).when(always()).transition(B, always(), Priority.HIGH, trace("H"));
-		machineBuilder.state(A).when(always()).transition(B, always(), Priority.NORMAL, trace("N"));
-		machineBuilder.state(A).when(always()).transition(B, always(), Priority.LOWEST, trace("L"));
+		new DslStateMachineBuilder<SimpleState, Object, Priority>(Priority.NORMAL) {
+			@Override
+			protected void executeBuildInstructions() {
+				state(A).when(always()).transition(B, always(), Priority.HIGH, trace("H"));
+				state(A).when(always()).transition(B, always(), Priority.NORMAL, trace("N"));
+				state(A).when(always()).transition(B, always(), Priority.LOWEST, trace("L"));
+			}
+		}.build(machine);
 
-		machineBuilder.buildMachine().poll();
+		machine.poll();
 		assertEquals("H", trace.toString());
 	}
 
 	@Test
 	public void normalPriosAreTheOnlyOnesFiringBecauseOtherPrioDoesntMeetCondition() {
-		machineBuilder.state(A).when(always()).transition(B, never(), Priority.HIGH, trace("H"));
-		machineBuilder.state(A).when(always()).transition(B, never(), Priority.NORMAL, trace("N"));
-		machineBuilder.state(A).when(always()).transition(B, always(), Priority.NORMAL, trace("N"));
-		machineBuilder.state(A).when(always()).transition(B, always(), Priority.NORMAL, trace("N"));
+		new DslStateMachineBuilder<SimpleState, Object, Priority>(Priority.NORMAL) {
+			@Override
+			protected void executeBuildInstructions() {
+				state(A).when(always()).transition(B, never(), Priority.HIGH, trace("H"));
+				state(A).when(always()).transition(B, never(), Priority.NORMAL, trace("N"));
+				state(A).when(always()).transition(B, always(), Priority.NORMAL, trace("N"));
+				state(A).when(always()).transition(B, always(), Priority.NORMAL, trace("N"));
+			}
+		}.build(machine);
 
-		machineBuilder.buildMachine().poll();
+		machine.poll();
 		assertEquals("NN", trace.toString());
 	}
 
 	@Test
 	public void equalPriosFireTogether() {
-		machineBuilder.state(A).when(always()).transition(B, always(), Priority.HIGH, trace("H"));
-		machineBuilder.state(A).when(always()).transition(B, always(), Priority.HIGH, trace("H"));
-		machineBuilder.state(A).when(always()).transition(B, always(), Priority.LOWEST, trace("L"));
+		new DslStateMachineBuilder<SimpleState, Object, Priority>(Priority.NORMAL) {
+			@Override
+			protected void executeBuildInstructions() {
+				state(A).when(always()).transition(B, always(), Priority.HIGH, trace("H"));
+				state(A).when(always()).transition(B, always(), Priority.HIGH, trace("H"));
+				state(A).when(always()).transition(B, always(), Priority.LOWEST, trace("L"));
+			}
+		}.build(machine);
 
-		machineBuilder.buildMachine().poll();
+		machine.poll();
 		assertEquals("HH", trace.toString());
 	}
 
