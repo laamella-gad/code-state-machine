@@ -3,6 +3,7 @@ bin
 target
 .settings
 *~
-/target
 .project
 .classpath
+.idea
+*.iml
