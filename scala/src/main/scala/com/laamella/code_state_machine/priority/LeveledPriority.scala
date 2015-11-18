@@ -5,5 +5,8 @@ package com.laamella.code_state_machine.priority
  */
 object LeveledPriority extends Enumeration {
   type LeveledPriority = Value
-	val HIGHEST, HIGH, NORMAL, LOW, LOWEST= Value
+  val LOWEST, LOW, NORMAL, HIGH, HIGHEST = Value
+
+  override def toString() = getClass.getSimpleName
+
 }

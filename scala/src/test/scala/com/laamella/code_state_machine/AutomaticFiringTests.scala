@@ -6,12 +6,10 @@ import com.laamella.code_state_machine.io.DotOutput
 import com.laamella.code_state_machine.priority.LeveledPriority
 import com.laamella.code_state_machine.priority.LeveledPriority.NORMAL
 import com.laamella.code_state_machine.util._
+import grizzled.slf4j.Logging
 import org.junit.{Before, Test}
-import org.slf4j.LoggerFactory
 
-class AutomaticFiringTests {
-	private val log = LoggerFactory.getLogger("AutomaticFiringTests")
-
+class AutomaticFiringTests extends Logging {
 	private var machine: StateMachine[SimpleState, Object, LeveledPriority.Value]= _
 
 	@Before def before() {
@@ -24,7 +22,7 @@ class AutomaticFiringTests {
 				state(E).isAnEndState()
 			}
 		}.build(new StateMachine[SimpleState, Object, LeveledPriority.Value]())
-		log.trace("\n" + new DotOutput[SimpleState, Object, LeveledPriority.Value]().getOutput(machine))
+		trace("\n" + new DotOutput[SimpleState, Object, LeveledPriority.Value]().getOutput(machine))
 	}
 
 	@Test

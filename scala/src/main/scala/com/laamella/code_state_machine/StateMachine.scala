@@ -1,6 +1,6 @@
 package com.laamella.code_state_machine
 
-import org.slf4j.{Logger, LoggerFactory}
+import grizzled.slf4j.Logging
 
 import scala.collection.mutable
 
@@ -46,9 +46,7 @@ import scala.collection.mutable
  * Priority type. Will be used to give priorities to transitions.
  * Enums and Integers are useful here.
  */
-class StateMachine[T, E, P <: Ordered[P]] {
-  private val log: Logger = LoggerFactory.getLogger("StateMachine")
-
+class StateMachine[T, E, P <: Ordered[P]] extends Logging {
   private val startStates = mutable.HashSet[T]()
   private val endStates = mutable.HashSet[T]()
   private val activeStates = mutable.HashSet[T]()
@@ -56,15 +54,15 @@ class StateMachine[T, E, P <: Ordered[P]] {
   private val entryEvents = mutable.HashMap[T, Actions]()
   private val transitions = mutable.HashMap[T, mutable.PriorityQueue[Transition[T, E, P]]]()
 
-  log.debug("New Machine")
+  debug("New Machine")
 
   /**
    * Resets all active states to the start states.
    */
   def reset() {
-    log.debug("reset()")
+    debug("reset()")
     if (startStates.isEmpty) {
-      log.warn("State machine does not contain any start states.")
+      warn("State machine does not contain any start states.")
     }
     activeStates.clear()
     for (startState <- startStates) {
@@ -100,10 +98,10 @@ class StateMachine[T, E, P <: Ordered[P]] {
 	 * some event that has happened.
    */
   def handleEvent(event: E) {
-    log.debug("handle event {}", event)
+    debug(s"handle event $event")
 
     for (sourceState <- activeStates) {
-      for (transition <- findTransitionsForState(sourceState)) {
+      for (transition <- transitions(sourceState)) {
         transition.conditions.handleEvent(event)
       }
     }
@@ -147,9 +145,10 @@ class StateMachine[T, E, P <: Ordered[P]] {
 
       for (sourceState <- activeStates) {
         var firingPriority: Option[P] = None
-        for (transition <- findTransitionsForState(sourceState)) {
+        for (transition <- transitions(sourceState)) {
           if (!transitionsThatHaveFiredBefore.contains(transition)) {
-            if (firingPriority != null && !transition.priority.equals(firingPriority)) {
+            // TODO put in 1 expression
+            if (firingPriority.isDefined && transition.priority != firingPriority.get) {
               // We reached a lower prio while higher prio transitions are firing.
               // Don't consider these anymore, go to the next source state.
 
@@ -170,7 +169,7 @@ class StateMachine[T, E, P <: Ordered[P]] {
         exitState(stateToExit)
       }
       for (transitionToFire: Transition[T, E, P] <- transitionsToFire) {
-        executeActions(transitionToFire.actions)
+        transitionToFire.actions.execute()
         transitionsThatHaveFiredBefore.add(transitionToFire)
         stillNewTransitionsFiring = true
       }
@@ -181,14 +180,8 @@ class StateMachine[T, E, P <: Ordered[P]] {
     } while (stillNewTransitionsFiring)
   }
 
-  private def executeActions(actions: Actions) {
-    if (actions != null) {
-      actions.execute()
-    }
-  }
-
   private def exitState(state: T) {
-    log.debug("exit state {}", state)
+    debug(s"exit state $state")
     if (activeStates.contains(state)) {
       executeExitActions(state)
       activeStates.remove(state)
@@ -197,34 +190,32 @@ class StateMachine[T, E, P <: Ordered[P]] {
 
   private def enterState(newState: T) {
     if (endStates.contains(newState)) {
-      log.debug("enter end state {}", newState)
+      debug(s"enter end state $newState")
       executeEntryActions(newState)
       if (activeStates.isEmpty) {
-        log.debug("machine is finished")
+        debug(s"machine is finished")
       }
       return
     }
     if (activeStates.add(newState)) {
-      log.debug("enter state {}", newState)
+      debug(s"enter state $newState")
       executeEntryActions(newState)
       resetTransitions(newState)
     }
   }
 
   private def resetTransitions(sourceState: T) {
-    for (transition <- findTransitionsForState(sourceState)) {
+    for (transition <- transitions(sourceState)) {
       transition.conditions.reset()
     }
   }
 
-  private def findTransitionsForState(sourceState: T): mutable.PriorityQueue[Transition[T, E, P]] = transitions(sourceState)
-
   private def executeExitActions(state: T) {
-    executeActions(exitEvents(state))
+    exitEvents.get(state).map(_.execute)
   }
 
   private def executeEntryActions(state: T) {
-    executeActions(entryEvents(state))
+    entryEvents.get(state).map(_.execute())
   }
 
   /**
@@ -249,7 +240,7 @@ class StateMachine[T, E, P <: Ordered[P]] {
     /**
      * @return the outgoing transitions for a source state.
      */
-    def getTransitionsForSourceState(sourceState: T) = StateMachine.this.findTransitionsForState(sourceState)
+    def getTransitionsForSourceState(sourceState: T) = StateMachine.this.transitions(sourceState)
 
 
     // TODO complete meta information
@@ -258,7 +249,7 @@ class StateMachine[T, E, P <: Ordered[P]] {
      * Add 0 or more actions to be executed when the state is exited.
      */
     def addExitActions(state: T, action: Seq[Action]) {
-      log.debug("Create exit action for '{}' ({}) ", state, action)
+      debug(s"Create exit action for '$state' ($action)")
       if (!exitEvents.contains(state)) {
         exitEvents.put(state, new Actions(action: _*))
         return
@@ -270,7 +261,7 @@ class StateMachine[T, E, P <: Ordered[P]] {
      * Add 0 or more actions to be executed when the state is entered.
      */
     def addEntryActions(state: T, action: Seq[Action]) {
-      log.debug("Create entry action for '{}' ({}) ", state, action)
+      debug(s"Create entry action for '$state' ($action)")
       if (!entryEvents.contains(state)) {
         entryEvents.put(state, new Actions(action: _*))
         return
@@ -282,7 +273,7 @@ class StateMachine[T, E, P <: Ordered[P]] {
      * Add an end state.
      */
     def addEndState(endState: T) {
-      log.debug("Add end state '{}'", endState)
+      debug(s"Add end state '$endState'")
       endStates.add(endState)
     }
 
@@ -291,8 +282,7 @@ class StateMachine[T, E, P <: Ordered[P]] {
      */
     def addTransition(transition: Transition[T, E, P]) {
       val sourceState = transition.sourceState
-      log.debug("Create transition from '{}' to '{}' (pre: '{}', action: '{}')", Array(sourceState,
-        transition.destinationState, transition.conditions, transition.actions))
+      debug(s"Create transition from '$sourceState' to '${transition.destinationState}' (pre: '${transition.conditions}', action: '${transition.actions}')")
       if (!transitions.contains(sourceState)) {
         transitions.put(sourceState, mutable.PriorityQueue[Transition[T, E, P]]())
       }
@@ -303,7 +293,7 @@ class StateMachine[T, E, P <: Ordered[P]] {
      * Adds a start state, and immediately activates it.
      */
     def addStartState(startState: T) {
-      log.debug("Add start state '{}'", startState)
+      debug(s"Add start state '$startState'")
       startStates.add(startState)
       activeStates.add(startState)
     }
@@ -312,7 +302,6 @@ class StateMachine[T, E, P <: Ordered[P]] {
      * @return the statemachine whose internals these are.
      */
     def getStateMachine: StateMachine[T, E, P] = StateMachine.this
-
   }
 
 }

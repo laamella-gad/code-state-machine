@@ -12,6 +12,8 @@ class AutomaticPriority extends Ordered[AutomaticPriority] {
   private val level = PriorityDeterminizer.nextPriority
 
   override def compare(that: AutomaticPriority): Int = level.compareTo(that.level)
+
+  override def toString = level.toString
 }
 
 private object PriorityDeterminizer {

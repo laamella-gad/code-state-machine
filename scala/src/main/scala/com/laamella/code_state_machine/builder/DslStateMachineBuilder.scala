@@ -3,7 +3,7 @@ package com.laamella.code_state_machine.builder
 import com.laamella.code_state_machine._
 import com.laamella.code_state_machine.action.LogAction
 import com.laamella.code_state_machine.condition.{AfterCondition, AlwaysCondition, MultiEventMatchCondition, NeverCondition, SingleEventMatchCondition, StatesActiveCondition, StatesInactiveCondition}
-import org.slf4j.LoggerFactory
+import grizzled.slf4j.Logging
 
 import scala.collection.mutable
 
@@ -11,7 +11,6 @@ import scala.collection.mutable
  * A pretty "DSL" builder for a state machine.
  */
 abstract class DslStateMachineBuilder[T, E, P <: Ordered[P]](defaultPriority: P) extends StateMachineBuilder[T, E, P] {
-  private val log = LoggerFactory.getLogger("DslStateMachineBuilder")
 
   class DefiningState(sourceStates: mutable.Set[T], internals: StateMachine[T, E, P]#Internals) {
     //		private Set<T> sourceStates = new HashSet<T>();
@@ -38,8 +37,8 @@ abstract class DslStateMachineBuilder[T, E, P <: Ordered[P]](defaultPriority: P)
 
     def onEntry(action: Action*): DefiningState = {
       for (sourceState <- sourceStates) {
-        log.debug(s"Create entry action for $sourceState $action")
-        internals.addEntryActions(sourceState, action);
+//        debug(s"Create entry action for $sourceState $action")
+        internals.addEntryActions(sourceState, action)
       }
       this
     }
@@ -79,6 +78,7 @@ abstract class DslStateMachineBuilder[T, E, P <: Ordered[P]](defaultPriority: P)
     private val actions = new Actions()
     private var priority = defaultPriority
 
+    // TODO
     //		public DefiningTransition() {
     //			this.sourceStates = sourceStates;
     //			this.conditions = conditions;
@@ -109,7 +109,6 @@ abstract class DslStateMachineBuilder[T, E, P <: Ordered[P]](defaultPriority: P)
     }
 
     def withPrio(priority: P): DefiningTransition = {
-      //TODO			assert priority != null;
       this.priority = priority
       this
     }
@@ -118,7 +117,6 @@ abstract class DslStateMachineBuilder[T, E, P <: Ordered[P]](defaultPriority: P)
   private var machine: StateMachine[T, E, P] = _
 
   override def build(newMachine: StateMachine[T, E, P]): StateMachine[T, E, P] = {
-    //	TODO	assert newMachine != null;
     machine = newMachine
     executeBuildInstructions()
     machine
@@ -132,12 +130,11 @@ abstract class DslStateMachineBuilder[T, E, P <: Ordered[P]](defaultPriority: P)
   }
 
   def state(state: T): DefiningState = {
-    //TODO		assert state != null;
     states(state)
   }
 
   def states(states: T*): DefiningState = {
-    val m = machine;
+    val m = machine
     new DefiningState(mutable.HashSet[T](states: _*), new m.Internals())
   }
 
@@ -151,15 +148,11 @@ abstract class DslStateMachineBuilder[T, E, P <: Ordered[P]](defaultPriority: P)
 
   def always() = new AlwaysCondition[E]()
 
-
-
   def never() = new NeverCondition[E]()
 
   def after(milliseconds: Long) = new AfterCondition[E](milliseconds)
 
   def is(events: E*): Conditions[E] = {
-    //TODO					assert events != null;
-    //					assert events.length != 0;
     if (events.length == 1) {
       val singleEvent = events(0)
       return new Conditions[E](new SingleEventMatchCondition[E](singleEvent))
@@ -168,7 +161,6 @@ abstract class DslStateMachineBuilder[T, E, P <: Ordered[P]](defaultPriority: P)
   }
 
   def log(logText: String): Action = {
-    //TODO	assert logText != null;
     new LogAction(logText)
   }
 

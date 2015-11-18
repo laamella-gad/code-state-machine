@@ -5,12 +5,10 @@ import com.laamella.code_state_machine.builder.DslStateMachineBuilder
 import com.laamella.code_state_machine.io.DotOutput
 import com.laamella.code_state_machine.priority.LeveledPriority
 import com.laamella.code_state_machine.priority.LeveledPriority.NORMAL
-import org.junit.{Test, Before}
-import org.slf4j.LoggerFactory
+import grizzled.slf4j.Logging
+import org.junit.{Before, Test}
 
-class StateTests {
-	private val log = LoggerFactory.getLogger("StateTests")
-
+class StateTests extends Logging {
 	private var gameMachine: StateMachine[GameState, GameEvent, LeveledPriority.Value] =_
 
 	@Before
@@ -37,7 +35,7 @@ class StateTests {
 			}
 		}
 		gameMachine = gameMachineBuilder.build()
-		log.trace("\n" + new DotOutput[GameState, GameEvent, LeveledPriority.Value]().getOutput(gameMachine))
+		trace("\n" + new DotOutput[GameState, GameEvent, LeveledPriority.Value]().getOutput(gameMachine))
 	}
 
 	@Test

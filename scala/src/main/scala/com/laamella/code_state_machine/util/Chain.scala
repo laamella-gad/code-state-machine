@@ -14,7 +14,6 @@ class Chain[T <: Object](val items: ListBuffer[T]) {
   }
 
   def add(additionalItems: Chain[T]) {
-    //TODO    assert(additionalItems != null)
     items ++= additionalItems.items
   }
 

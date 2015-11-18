@@ -16,3 +16,7 @@ class Actions(items: ListBuffer[Action]) extends Chain[Action](items) {
     }
   }
 }
+
+object Actions {
+  val None = new Actions()
+}

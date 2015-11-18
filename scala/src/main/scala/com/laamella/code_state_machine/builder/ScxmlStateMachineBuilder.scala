@@ -4,7 +4,7 @@ import javax.xml.parsers.DocumentBuilderFactory
 
 import com.laamella.code_state_machine._
 import com.laamella.code_state_machine.priority.AutomaticPriority
-import org.slf4j.LoggerFactory
+import grizzled.slf4j.Logging
 import org.w3c.dom.{Element, Node}
 import org.xml.sax.InputSource
 
@@ -47,9 +47,7 @@ import org.xml.sax.InputSource
  * <td>parallel states (treated as normal states)
  * </tr>
  */
-abstract class ScxmlStateMachineBuilder[T, E](inputSource: InputSource) extends StateMachineBuilder[T, E, AutomaticPriority] {
-  private val log = LoggerFactory.getLogger("ScxmlStateMachineBuilder")
-
+abstract class ScxmlStateMachineBuilder[T, E](inputSource: InputSource) extends StateMachineBuilder[T, E, AutomaticPriority] with Logging {
   private val TRANSITION_ELEMENT = "transition"
   private val PARALLEL_ELEMENT = "parallel"
   private val CONDITION_ATTRIBUTE = "cond"
@@ -82,7 +80,7 @@ abstract class ScxmlStateMachineBuilder[T, E](inputSource: InputSource) extends 
     val state = interpretStateName(stateName)
 
     val childNodes = stateElement.getChildNodes
-    for(i <- 0 to childNodes.getLength) {
+    for (i <- 0 to childNodes.getLength - 1) {
       val subNode = childNodes.item(i)
       if (subNode.getNodeType == Node.ELEMENT_NODE) {
         val subElement = subNode.asInstanceOf[Element]
@@ -109,7 +107,7 @@ abstract class ScxmlStateMachineBuilder[T, E](inputSource: InputSource) extends 
             // TODO do something about priorities
             builder.addTransition(new Transition[T, E, AutomaticPriority](state, targetState, conditions, new AutomaticPriority, actions))
           } else {
-            log.warn("State " + stateName + " has a transition going nowhere.")
+            warn("State " + stateName + " has a transition going nowhere.")
           }
         } else if (subNodeName.equals("onentry")) {
           builder.addEntryActions(state, Seq(interpretEvent(subNode.getTextContent)))
