@@ -3,30 +3,31 @@ package com.laamella.code_state_machine
 import com.laamella.code_state_machine.builder.DslStateMachineBuilder
 import com.laamella.code_state_machine.priority.LeveledPriority._
 import com.laamella.code_state_machine.util.{A, B, SimpleState}
-import org.junit.Assert._
-import org.junit.{Before, Test}
+import org.scalatest.BeforeAndAfterEach
 
-class PriorityTests {
-  private val trace = new StringBuffer()
+class PriorityTests extends UnitSpec with BeforeAndAfterEach {
+  private var trace: StringBuilder = _
 
   private var machine: StateMachine[SimpleState, Object, Value] = _
 
-  @Before
-  def before() = {
+  override def beforeEach() {
     machine = new DslStateMachineBuilder[SimpleState, Object, Value](NORMAL) {
       override protected def executeBuildInstructions() = {
         state(A).isAStartState()
         state(B).isAnEndState()
       }
     }.build()
+
+    trace = new StringBuilder()
   }
 
   private def trace(signature: String): TraceAction = {
     new TraceAction(trace, signature)
   }
 
-  @Test
-  def highPrioIsTheOnlyOneFiring() = {
+  behavior of "transitions with priorities"
+
+  they should "only fire when they have the highest priority" in {
     new DslStateMachineBuilder[SimpleState, Object, Value](NORMAL) {
       override protected def executeBuildInstructions() = {
         state(A).whenConditions(always()).transition(B, always(), HIGH, trace("H"))
@@ -36,11 +37,10 @@ class PriorityTests {
     }.build(machine)
 
     machine.poll()
-    assertEquals("H", trace.toString)
+    assert("H" == trace.toString)
   }
 
-  @Test
-  def normalPriosAreTheOnlyOnesFiringBecauseOtherPrioDoesntMeetCondition() = {
+  they should "only fire when their condition is met, even though higher priority transactions exist" in {
     new DslStateMachineBuilder[SimpleState, Object, Value](NORMAL) {
       @Override
       protected def executeBuildInstructions() {
@@ -52,11 +52,10 @@ class PriorityTests {
     }.build(machine)
 
     machine.poll()
-    assertEquals("NN", trace.toString)
+    assert("NN" == trace.toString)
   }
 
-  @Test
-  def equalPriosFireTogether() = {
+  they should "fire together when they have the same priority" in {
     new DslStateMachineBuilder[SimpleState, Object, Value](NORMAL) {
       override protected def executeBuildInstructions() {
         state(A).whenConditions(always()).transition(B, always(), HIGH, trace("H"))
@@ -66,7 +65,7 @@ class PriorityTests {
     }.build(machine)
 
     machine.poll()
-    assertEquals("HH", trace.toString)
+    assert("HH" == trace.toString)
   }
 
 }
