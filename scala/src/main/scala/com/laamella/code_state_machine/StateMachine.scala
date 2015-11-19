@@ -5,6 +5,21 @@ import grizzled.slf4j.Logging
 import scala.collection.mutable
 
 /**
+ * A conditional transition between two states.
+ *
+ * @tparam T type of state.
+ * @tparam E type of event.
+ * @tparam P type of priority.
+ */
+class Transition[T, E, P <: Ordered[P]](val sourceState: T, val destinationState: T, val conditions: Conditions[E], val priority: P, val actions: Seq[() => Unit]) extends Ordered[Transition[T, E, P]] {
+  override def toString = s"Transition from $sourceState to $destinationState, condition $conditions, action $actions, priority $priority"
+
+  /** Compares transitions on their priorities. */
+  override def compare(that: Transition[T, E, P]): Int = priority.compareTo(that.priority)
+}
+
+
+/**
  * A programmer friendly state machine.
  * <p/>
  * Features:
@@ -50,8 +65,8 @@ class StateMachine[T, E, P <: Ordered[P]] extends Logging {
   private val startStates = mutable.HashSet[T]()
   private val endStates = mutable.HashSet[T]()
   private val activeStates = mutable.HashSet[T]()
-  private val exitEvents = mutable.HashMap[T, Seq[Action]]()
-  private val entryEvents = mutable.HashMap[T, Seq[Action]]()
+  private val exitEvents = mutable.HashMap[T, Seq[() => Unit]]()
+  private val entryEvents = mutable.HashMap[T, Seq[() => Unit]]()
   private val transitions = mutable.HashMap[T, mutable.PriorityQueue[Transition[T, E, P]]]()
 
   debug("New Machine")
@@ -248,7 +263,7 @@ class StateMachine[T, E, P <: Ordered[P]] extends Logging {
     /**
      * Add 0 or more actions to be executed when the state is exited.
      */
-    def addExitActions(state: T, actions: Seq[Action]) {
+    def addExitActions(state: T, actions: Seq[() => Unit]) {
       debug(s"Create exit action for '$state' ($actions)")
       if (!exitEvents.contains(state)) {
         exitEvents.put(state, actions)
@@ -260,7 +275,7 @@ class StateMachine[T, E, P <: Ordered[P]] extends Logging {
     /**
      * Add 0 or more actions to be executed when the state is entered.
      */
-    def addEntryActions(state: T, actions: Seq[Action]) {
+    def addEntryActions(state: T, actions: Seq[() => Unit]) {
       debug(s"Create entry action for '$state' ($actions)")
       if (!entryEvents.contains(state)) {
         entryEvents.put(state, actions)

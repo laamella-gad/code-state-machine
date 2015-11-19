@@ -27,14 +27,14 @@ abstract class DslStateMachineBuilder[T, E, P <: Ordered[P]](defaultPriority: P)
       this
     }
 
-    def onExit(action: Action*): DefiningState = {
+    def onExit(action: (() => Unit)*): DefiningState = {
       for (sourceState <- sourceStates) {
         internals.addExitActions(sourceState, action)
       }
       this
     }
 
-    def onEntry(action: Action*): DefiningState = {
+    def onEntry(action: (() => Unit)*): DefiningState = {
       for (sourceState <- sourceStates) {
 //        debug(s"Create entry action for $sourceState $action")
         internals.addEntryActions(sourceState, action)
@@ -73,7 +73,7 @@ abstract class DslStateMachineBuilder[T, E, P <: Ordered[P]](defaultPriority: P)
   }
 
   class DefiningTransition(sourceStates: mutable.Set[T], conditions: Conditions[E], internals: StateMachine[T, E, P]#Internals) {
-    private val actions = mutable.MutableList[Action]()
+    private val actions = mutable.MutableList[() => Unit]()
     private var priority = defaultPriority
 
     // TODO
@@ -83,7 +83,7 @@ abstract class DslStateMachineBuilder[T, E, P <: Ordered[P]](defaultPriority: P)
     //			this.internals = internals;
     //		}
 
-    def action(action: Action): DefiningTransition = {
+    def action(action: () => Unit): DefiningTransition = {
       actions +=action
       this
     }
@@ -92,7 +92,7 @@ abstract class DslStateMachineBuilder[T, E, P <: Ordered[P]](defaultPriority: P)
       transition(destinationState, conditions, priority, actions)
     }
 
-    def transition(destinationState: T, storedConditions2: Conditions[E], priority: P, actions: Seq[Action]): DefiningState = {
+    def transition(destinationState: T, storedConditions2: Conditions[E], priority: P, actions: Seq[() => Unit]): DefiningState = {
       this.actions ++= actions
       for (sourceState <- sourceStates) {
         internals.addTransition(new Transition[T, E, P](sourceState, destinationState, storedConditions2, priority, this.actions))
@@ -100,7 +100,7 @@ abstract class DslStateMachineBuilder[T, E, P <: Ordered[P]](defaultPriority: P)
       new DefiningState(sourceStates, internals)
     }
 
-    def transition(destinationState: T, condition: Condition[E], priority: P, actions: Action*): DefiningState = {
+    def transition(destinationState: T, condition: Condition[E], priority: P, actions: (() => Unit)*): DefiningState = {
       transition(destinationState, new Conditions[E](condition), priority, actions)
     }
 
@@ -156,7 +156,7 @@ abstract class DslStateMachineBuilder[T, E, P <: Ordered[P]](defaultPriority: P)
     new Conditions[E](new MultiEventMatchCondition[E](events: _*))
   }
 
-  def log(logText: String): Action = {
+  def log(logText: String): () => Unit = {
     new LogAction(logText)
   }
 

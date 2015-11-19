@@ -101,7 +101,7 @@ abstract class ScxmlStateMachineBuilder[T, E](inputSource: InputSource) extends 
               conditions.add(interpretCondition(subElement.getAttribute(CONDITION_ATTRIBUTE)))
             }
 
-            val actions = new mutable.MutableList[Action]()
+            val actions = new mutable.MutableList[() => Unit]()
             if (subElement.hasAttribute(EVENT_ATTRIBUTE)) {
               actions += interpretEvent(subElement.getAttribute(EVENT_ATTRIBUTE))
             }
@@ -121,7 +121,7 @@ abstract class ScxmlStateMachineBuilder[T, E](inputSource: InputSource) extends 
     state
   }
 
-  protected def interpretEvent(attribute: String): Action
+  protected def interpretEvent(attribute: String): () => Unit
 
   protected def interpretCondition(attribute: String): Condition[E]
 

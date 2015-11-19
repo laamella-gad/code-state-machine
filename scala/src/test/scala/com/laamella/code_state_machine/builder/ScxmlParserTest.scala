@@ -1,13 +1,11 @@
 package com.laamella.code_state_machine.builder
 
-import com.laamella.code_state_machine.{UnitSpec, Action, Condition}
 import com.laamella.code_state_machine.action.LogAction
 import com.laamella.code_state_machine.condition.AlwaysCondition
 import com.laamella.code_state_machine.io.DotOutput
 import com.laamella.code_state_machine.priority.AutomaticPriority
+import com.laamella.code_state_machine.{Condition, UnitSpec}
 import org.xml.sax.InputSource
-import org.scalatest._
-import org.scalatest.Assertions._
 
 class ScxmlParserTest extends UnitSpec {
 
@@ -18,7 +16,7 @@ class ScxmlParserTest extends UnitSpec {
     val scxmlParser = new ScxmlStateMachineBuilder[String, String](inputSource) {
       override def interpretStateName(name: String): String = name
 
-      override def interpretEvent(attribute: String): Action = new LogAction(attribute)
+      override def interpretEvent(attribute: String): () => Unit = new LogAction(attribute)
 
       override def interpretCondition(attribute: String): Condition[String] = new AlwaysCondition[String]()
     }
