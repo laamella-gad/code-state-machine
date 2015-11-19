@@ -96,9 +96,9 @@ abstract class ScxmlStateMachineBuilder[T, E](inputSource: InputSource) extends 
           if (subElement.hasAttribute(TARGET_ATTRIBUTE)) {
             val targetState = interpretStateName(subElement.getAttribute(TARGET_ATTRIBUTE))
 
-            val conditions = new Conditions[E]()
+            val conditions = new mutable.MutableList[Condition[E]]()
             if (subElement.hasAttribute(CONDITION_ATTRIBUTE)) {
-              conditions.add(interpretCondition(subElement.getAttribute(CONDITION_ATTRIBUTE)))
+              conditions += interpretCondition(subElement.getAttribute(CONDITION_ATTRIBUTE))
             }
 
             val actions = new mutable.MutableList[() => Unit]()

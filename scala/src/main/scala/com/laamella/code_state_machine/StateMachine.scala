@@ -5,19 +5,44 @@ import grizzled.slf4j.Logging
 import scala.collection.mutable
 
 /**
+ * A condition that is met or not.
+ *
+ * E is the event type.
+ */
+trait Condition[E] {
+  /**
+   * Handle an event.
+   *
+   * @param event the event that has occurred.
+   */
+  def handleEvent(event: E)
+
+  /**
+   * @return whether the condition is met.
+   */
+  def isMet: Boolean
+
+  /**
+   * This method is called every time the sourceState for this transition is
+   * entered. It can be used to implement stateful transitions, like
+   * transitions that fire after a certain amount of time.
+   */
+  def reset()
+}
+
+/**
  * A conditional transition between two states.
  *
  * @tparam T type of state.
  * @tparam E type of event.
  * @tparam P type of priority.
  */
-class Transition[T, E, P <: Ordered[P]](val sourceState: T, val destinationState: T, val conditions: Conditions[E], val priority: P, val actions: Seq[() => Unit]) extends Ordered[Transition[T, E, P]] {
+class Transition[T, E, P <: Ordered[P]](val sourceState: T, val destinationState: T, val conditions: Seq[Condition[E]], val priority: P, val actions: Seq[() => Unit]) extends Ordered[Transition[T, E, P]] {
   override def toString = s"Transition from $sourceState to $destinationState, condition $conditions, action $actions, priority $priority"
 
   /** Compares transitions on their priorities. */
   override def compare(that: Transition[T, E, P]): Int = priority.compareTo(that.priority)
 }
-
 
 /**
  * A programmer friendly state machine.
@@ -117,7 +142,7 @@ class StateMachine[T, E, P <: Ordered[P]] extends Logging {
 
     for (sourceState <- activeStates) {
       for (transition <- transitions(sourceState)) {
-        transition.conditions.handleEvent(event)
+        transition.conditions.foreach(_.handleEvent(event))
       }
     }
     poll()
@@ -170,7 +195,7 @@ class StateMachine[T, E, P <: Ordered[P]] extends Logging {
               // TODO
               //							break;
             } else
-            if (transition.conditions.isMet) {
+            if (transition.conditions.forall(_.isMet)) {
               statesToExit.add(sourceState)
               transitionsToFire.add(transition)
               statesToEnter.add(transition.destinationState)
@@ -221,7 +246,7 @@ class StateMachine[T, E, P <: Ordered[P]] extends Logging {
 
   private def resetTransitions(sourceState: T) {
     for (transition <- transitions(sourceState)) {
-      transition.conditions.reset()
+      transition.conditions.foreach(_.reset())
     }
   }
 

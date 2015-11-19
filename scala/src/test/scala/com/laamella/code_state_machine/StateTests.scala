@@ -81,4 +81,9 @@ class StateTests extends UnitSpec with BeforeAndAfterEach with Logging {
     gameMachine.reset()
     assertActive(gameMachine, LOADER)
   }
+
+  it should "aaa" in {
+    val result: Boolean = List(true, false, true).foldLeft(true) (_ && _)
+    println(result)
+  }
 }
