@@ -5,5 +5,5 @@ package com.laamella.code_state_machine
  * a log of actions.
  */
 class TraceAction(trace: StringBuilder, signature: String) extends Action {
-  override def execute() = trace.append(signature)
+  override def apply() = trace.append(signature)
 }

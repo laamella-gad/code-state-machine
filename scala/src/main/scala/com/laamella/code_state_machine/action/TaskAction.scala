@@ -15,7 +15,7 @@ abstract class TaskAction[E] extends Runnable with FinishableAction[E] {
   private var taskThread: Thread = _
   private var finishedCondition: NonEventBasedCondition[E] = _
 
-  override def execute() {
+  override def apply() {
     taskThread = new Thread(this)
     finishedCondition = new NonEventBasedCondition[E]() {
       override def isMet = taskThread.getState == State.TERMINATED

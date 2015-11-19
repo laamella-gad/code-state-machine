@@ -50,8 +50,8 @@ class StateMachine[T, E, P <: Ordered[P]] extends Logging {
   private val startStates = mutable.HashSet[T]()
   private val endStates = mutable.HashSet[T]()
   private val activeStates = mutable.HashSet[T]()
-  private val exitEvents = mutable.HashMap[T, Actions]()
-  private val entryEvents = mutable.HashMap[T, Actions]()
+  private val exitEvents = mutable.HashMap[T, Seq[Action]]()
+  private val entryEvents = mutable.HashMap[T, Seq[Action]]()
   private val transitions = mutable.HashMap[T, mutable.PriorityQueue[Transition[T, E, P]]]()
 
   debug("New Machine")
@@ -169,7 +169,7 @@ class StateMachine[T, E, P <: Ordered[P]] extends Logging {
         exitState(stateToExit)
       }
       for (transitionToFire: Transition[T, E, P] <- transitionsToFire) {
-        transitionToFire.actions.execute()
+        transitionToFire.actions.foreach(_())
         transitionsThatHaveFiredBefore.add(transitionToFire)
         stillNewTransitionsFiring = true
       }
@@ -211,11 +211,11 @@ class StateMachine[T, E, P <: Ordered[P]] extends Logging {
   }
 
   private def executeExitActions(state: T) {
-    exitEvents.get(state).map(_.execute)
+    exitEvents.get(state).foreach(_.foreach(_()))
   }
 
   private def executeEntryActions(state: T) {
-    entryEvents.get(state).map(_.execute())
+    entryEvents.get(state).foreach(_.foreach(_()))
   }
 
   /**
@@ -248,25 +248,25 @@ class StateMachine[T, E, P <: Ordered[P]] extends Logging {
     /**
      * Add 0 or more actions to be executed when the state is exited.
      */
-    def addExitActions(state: T, action: Seq[Action]) {
-      debug(s"Create exit action for '$state' ($action)")
+    def addExitActions(state: T, actions: Seq[Action]) {
+      debug(s"Create exit action for '$state' ($actions)")
       if (!exitEvents.contains(state)) {
-        exitEvents.put(state, new Actions(action: _*))
+        exitEvents.put(state, actions)
         return
       }
-      exitEvents(state).add(action: _*)
+      exitEvents(state) ++= actions
     }
 
     /**
      * Add 0 or more actions to be executed when the state is entered.
      */
-    def addEntryActions(state: T, action: Seq[Action]) {
-      debug(s"Create entry action for '$state' ($action)")
+    def addEntryActions(state: T, actions: Seq[Action]) {
+      debug(s"Create entry action for '$state' ($actions)")
       if (!entryEvents.contains(state)) {
-        entryEvents.put(state, new Actions(action: _*))
+        entryEvents.put(state, actions)
         return
       }
-      entryEvents(state).add(action: _*)
+      entryEvents(state) ++= actions
     }
 
     /**

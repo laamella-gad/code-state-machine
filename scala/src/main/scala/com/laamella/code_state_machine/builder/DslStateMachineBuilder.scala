@@ -3,7 +3,6 @@ package com.laamella.code_state_machine.builder
 import com.laamella.code_state_machine._
 import com.laamella.code_state_machine.action.LogAction
 import com.laamella.code_state_machine.condition.{AfterCondition, AlwaysCondition, MultiEventMatchCondition, NeverCondition, SingleEventMatchCondition, StatesActiveCondition, StatesInactiveCondition}
-import grizzled.slf4j.Logging
 
 import scala.collection.mutable
 
@@ -74,7 +73,7 @@ abstract class DslStateMachineBuilder[T, E, P <: Ordered[P]](defaultPriority: P)
   }
 
   class DefiningTransition(sourceStates: mutable.Set[T], conditions: Conditions[E], internals: StateMachine[T, E, P]#Internals) {
-    private val actions = new Actions()
+    private val actions = mutable.MutableList[Action]()
     private var priority = defaultPriority
 
     // TODO
@@ -85,7 +84,7 @@ abstract class DslStateMachineBuilder[T, E, P <: Ordered[P]](defaultPriority: P)
     //		}
 
     def action(action: Action): DefiningTransition = {
-      actions.add(action)
+      actions +=action
       this
     }
 
@@ -93,8 +92,8 @@ abstract class DslStateMachineBuilder[T, E, P <: Ordered[P]](defaultPriority: P)
       transition(destinationState, conditions, priority, actions)
     }
 
-    def transition(destinationState: T, storedConditions2: Conditions[E], priority: P, actions: Actions): DefiningState = {
-      this.actions.add(actions)
+    def transition(destinationState: T, storedConditions2: Conditions[E], priority: P, actions: Seq[Action]): DefiningState = {
+      this.actions ++= actions
       for (sourceState <- sourceStates) {
         internals.addTransition(new Transition[T, E, P](sourceState, destinationState, storedConditions2, priority, this.actions))
       }
@@ -102,7 +101,7 @@ abstract class DslStateMachineBuilder[T, E, P <: Ordered[P]](defaultPriority: P)
     }
 
     def transition(destinationState: T, condition: Condition[E], priority: P, actions: Action*): DefiningState = {
-      transition(destinationState, new Conditions[E](condition), priority, new Actions(actions: _*))
+      transition(destinationState, new Conditions[E](condition), priority, actions)
     }
 
     def withPrio(priority: P): DefiningTransition = {

@@ -8,6 +8,8 @@ import grizzled.slf4j.Logging
 import org.w3c.dom.{Element, Node}
 import org.xml.sax.InputSource
 
+import scala.collection.mutable
+
 /**
  * A State machine builder that attempts to read the <a
  * href="http://www.w3.org/TR/scxml/">SCXML</a> format. Since many features are
@@ -99,9 +101,9 @@ abstract class ScxmlStateMachineBuilder[T, E](inputSource: InputSource) extends 
               conditions.add(interpretCondition(subElement.getAttribute(CONDITION_ATTRIBUTE)))
             }
 
-            val actions = new Actions()
+            val actions = new mutable.MutableList[Action]()
             if (subElement.hasAttribute(EVENT_ATTRIBUTE)) {
-              actions.add(interpretEvent(subElement.getAttribute(EVENT_ATTRIBUTE)))
+              actions += interpretEvent(subElement.getAttribute(EVENT_ATTRIBUTE))
             }
 
             // TODO do something about priorities
