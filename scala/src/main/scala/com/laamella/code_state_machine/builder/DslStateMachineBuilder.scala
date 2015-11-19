@@ -64,7 +64,6 @@ abstract class DslStateMachineBuilder[T, E, P <: Ordered[P]](defaultPriority: P)
     def areStartStates(): DefiningState = isAStartState()
 
     def whenConditions(condition: Condition[E]*): DefiningTransition = {
-      //	TODO		assert condition != null;
       new DefiningTransition(sourceStates, new Conditions[E](condition: _*), internals)
     }
 
@@ -86,13 +85,11 @@ abstract class DslStateMachineBuilder[T, E, P <: Ordered[P]](defaultPriority: P)
     //		}
 
     def action(action: Action): DefiningTransition = {
-      //	TODO		assert action != null;
       actions.add(action)
       this
     }
 
     def then(destinationState: T): DefiningState = {
-      //	TODO		assert destinationState != null;
       transition(destinationState, conditions, priority, actions)
     }
 
