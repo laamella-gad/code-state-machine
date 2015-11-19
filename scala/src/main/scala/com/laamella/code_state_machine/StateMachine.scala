@@ -89,7 +89,7 @@ class Transition[T, E, P <: Ordered[P]](val sourceState: T, val destinationState
 class StateMachine[T, E, P <: Ordered[P]] extends Logging {
   private val startStates = mutable.HashSet[T]()
   private val endStates = mutable.HashSet[T]()
-  private val activeStates = mutable.HashSet[T]()
+  val activeStates = mutable.HashSet[T]()
   private val exitEvents = mutable.HashMap[T, Seq[() => Unit]]()
   private val entryEvents = mutable.HashMap[T, Seq[() => Unit]]()
   private val transitions = mutable.HashMap[T, mutable.PriorityQueue[Transition[T, E, P]]]()
@@ -111,23 +111,16 @@ class StateMachine[T, E, P <: Ordered[P]] extends Logging {
   }
 
   /**
-   * @return a set of all active states.
-   */
-  def getActiveStates = activeStates
-
-  /**
    * @return whether state is currently active.
    */
-  def isActive(state: T): Boolean = activeStates.contains(state)
-
+  def active(state: T): Boolean = activeStates.contains(state)
 
   /**
    * @return whether no states are active. Can be caused by all active states
    *         having disappeared into end states, or by having no start states
    *         at all.
    */
-  def isFinished = activeStates.isEmpty
-
+  def finished = activeStates.isEmpty
 
   /**
    * Handle an event coming from the user application. After sending the event
@@ -209,7 +202,7 @@ class StateMachine[T, E, P <: Ordered[P]] extends Logging {
         exitState(stateToExit)
       }
       for (transitionToFire: Transition[T, E, P] <- transitionsToFire) {
-        transitionToFire.actions.foreach(_())
+        transitionToFire.actions.foreach(_ ())
         transitionsThatHaveFiredBefore.add(transitionToFire)
         stillNewTransitionsFiring = true
       }
@@ -245,17 +238,15 @@ class StateMachine[T, E, P <: Ordered[P]] extends Logging {
   }
 
   private def resetTransitions(sourceState: T) {
-    for (transition <- transitions(sourceState)) {
-      transition.conditions.foreach(_.reset())
-    }
+    transitions.get(sourceState).foreach(_.foreach(_.conditions.foreach(_.reset())))
   }
 
   private def executeExitActions(state: T) {
-    exitEvents.get(state).foreach(_.foreach(_()))
+    exitEvents.get(state).foreach(_.foreach(_ ()))
   }
 
   private def executeEntryActions(state: T) {
-    entryEvents.get(state).foreach(_.foreach(_()))
+    entryEvents.get(state).foreach(_.foreach(_ ()))
   }
 
   /**
@@ -265,36 +256,35 @@ class StateMachine[T, E, P <: Ordered[P]] extends Logging {
     /**
      * @return the end states.
      */
-    def getEndStates: mutable.Set[T] = new mutable.HashSet ++= StateMachine.this.endStates
+    def endStates: Set[T] = Set() ++ StateMachine.this.endStates
 
     /**
      * @return the start states.
      */
-    def getStartStates: mutable.Set[T] = new mutable.HashSet ++= StateMachine.this.startStates
+    def startStates: Set[T] = Set() ++ StateMachine.this.startStates
 
     /**
      * @return the states that have outgoing transitions defined.
      */
-    def getSourceStates: mutable.Set[T] = new mutable.HashSet ++= StateMachine.this.transitions.keySet
+    def sourceStates: Set[T] = Set() ++ StateMachine.this.transitions.keySet
 
     /**
      * @return the outgoing transitions for a source state.
      */
-    def getTransitionsForSourceState(sourceState: T) = StateMachine.this.transitions(sourceState)
-
+    def transitionsForSourceState(sourceState: T) = StateMachine.this.transitions(sourceState)
 
     // TODO complete meta information
-
     /**
      * Add 0 or more actions to be executed when the state is exited.
      */
     def addExitActions(state: T, actions: Seq[() => Unit]) {
       debug(s"Create exit action for '$state' ($actions)")
-      if (!exitEvents.contains(state)) {
-        exitEvents.put(state, actions)
+      // TODO there's probably a better way to express this
+      if (!stateMachine.exitEvents.contains(state)) {
+        stateMachine.exitEvents.put(state, actions)
         return
       }
-      exitEvents(state) ++= actions
+      stateMachine.exitEvents(state) ++= actions
     }
 
     /**
@@ -302,11 +292,11 @@ class StateMachine[T, E, P <: Ordered[P]] extends Logging {
      */
     def addEntryActions(state: T, actions: Seq[() => Unit]) {
       debug(s"Create entry action for '$state' ($actions)")
-      if (!entryEvents.contains(state)) {
-        entryEvents.put(state, actions)
+      if (!stateMachine.entryEvents.contains(state)) {
+        stateMachine.entryEvents.put(state, actions)
         return
       }
-      entryEvents(state) ++= actions
+      stateMachine.entryEvents(state) ++= actions
     }
 
     /**
@@ -314,7 +304,7 @@ class StateMachine[T, E, P <: Ordered[P]] extends Logging {
      */
     def addEndState(endState: T) {
       debug(s"Add end state '$endState'")
-      endStates.add(endState)
+      stateMachine.endStates.add(endState)
     }
 
     /**
@@ -334,14 +324,14 @@ class StateMachine[T, E, P <: Ordered[P]] extends Logging {
      */
     def addStartState(startState: T) {
       debug(s"Add start state '$startState'")
-      startStates.add(startState)
-      activeStates.add(startState)
+      stateMachine.startStates.add(startState)
+      stateMachine.activeStates.add(startState)
     }
 
     /**
      * @return the statemachine whose internals these are.
      */
-    def getStateMachine: StateMachine[T, E, P] = StateMachine.this
+    def stateMachine: StateMachine[T, E, P] = StateMachine.this
   }
 
 }

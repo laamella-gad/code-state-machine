@@ -17,7 +17,7 @@ import com.laamella.code_state_machine.StateMachine
 final class SubStateMachineCondition[T, E, P <: Ordered[P]](stateMachine: StateMachine[T, E, P]) extends EventBasedCondition[E] {
   override def conditionIsMetAfterHandlingEvent(event: E): Boolean = {
     stateMachine.handleEvent(event)
-    stateMachine isFinished
+    stateMachine finished
   }
 
   override def reset() = {

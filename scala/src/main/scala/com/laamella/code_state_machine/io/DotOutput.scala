@@ -15,23 +15,23 @@ class DotOutput[T, E, P <: Ordered[P]] {
 		output.append("digraph finite_state_machine {\n")
 		output.append("\trankdir=LR;\n")
 		output.append("\tsize=\"8,5\"\n")
-		if (internals.getStartStates.nonEmpty) {
+		if (internals.startStates.nonEmpty) {
 			output.append("\tnode [shape = doublecircle, style=solid];")
-			for (startState <- internals.getStartStates) {
+			for (startState <- internals.startStates) {
 				output.append(" " + startState)
 			}
 			output.append(";\n")
 		}
-		if (internals.getEndStates.nonEmpty) {
+		if (internals.endStates.nonEmpty) {
 			output.append("\tnode [shape = circle, style=dotted];")
-			for (startState <- internals.getEndStates) {
+			for (startState <- internals.endStates) {
 				output.append(" " + startState)
 			}
 			output.append(";\n")
 		}
 		output.append("\tnode [shape = circle, style=solid];\n")
-		for (sourceState <- internals.getSourceStates) {
-			for (transition <- internals.getTransitionsForSourceState(sourceState)) {
+		for (sourceState <- internals.sourceStates) {
+			for (transition <- internals.transitionsForSourceState(sourceState)) {
 				output.append("\t" + sourceState + " -> " + transition.destinationState)
 				output.append(" [ label = \"" + transition.conditions + "\" ]")
 				output.append(";\n")
