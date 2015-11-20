@@ -14,69 +14,45 @@ class DslStateMachineBuilder[T, E, P <: Ordered[P]](defaultPriority: P) {
 
   class DefiningState(sourceStates: mutable.Set[T]) {
     def except(states: T*): DefiningState = {
-      for (state <- states) {
-        sourceStates.remove(state)
-      }
+      states.foreach(sourceStates.remove)
       this
     }
 
     def onExit(action: (() => Unit)*): DefiningState = {
-      for (sourceState <- sourceStates) {
-        builder.addExitActions(sourceState, action)
-      }
+      sourceStates.foreach(builder.addExitActions(_, action))
       this
     }
 
     def onEntry(action: (() => Unit)*): DefiningState = {
-      for (sourceState <- sourceStates) {
-        builder.addEntryActions(sourceState, action)
-      }
+      sourceStates.foreach(builder.addEntryActions(_, action))
       this
     }
 
-    def onExitLog(logText: String): DefiningState = {
-      onExit(new LogAction(logText))
-    }
+    def onExitLog(logText: String): DefiningState = onExit(new LogAction(logText))
 
-    def onEntryLog(logText: String): DefiningState = {
-      onEntry(new LogAction(logText))
-    }
+    def onEntryLog(logText: String): DefiningState = onEntry(new LogAction(logText))
 
     def isAnEndState(): DefiningState = {
-      for (state <- sourceStates) {
-        builder.addEndState(state)
-      }
+      sourceStates.foreach(builder.addEndState)
       this
     }
 
     def isAStartState(): DefiningState = {
-      for (state <- sourceStates) {
-        builder.addStartState(state)
-      }
+      sourceStates.foreach(builder.addStartState)
       this
     }
 
-    def areEndStates(): DefiningState = {
-      isAnEndState()
-    }
+    def areEndStates(): DefiningState = isAnEndState()
 
     def areStartStates(): DefiningState = isAStartState()
 
-    def when(conditions: Condition[E]*): DefiningTransition = {
-      new DefiningTransition(sourceStates, conditions)
-    }
+    def when(conditions: Condition[E]*): DefiningTransition = new DefiningTransition(sourceStates, conditions)
 
-    def always(): DefiningTransition = {
-      new DefiningTransition(sourceStates, Seq(new AlwaysCondition[E]()))
-    }
+    def always(): DefiningTransition = new DefiningTransition(sourceStates, Seq(new AlwaysCondition[E]()))
 
-    def never(): DefiningTransition = {
-      new DefiningTransition(sourceStates, Seq(new NeverCondition[E]()))
-    }
+    def never(): DefiningTransition = new DefiningTransition(sourceStates, Seq(new NeverCondition[E]()))
 
-    def after(milliseconds: Long): DefiningTransition = {
-      new DefiningTransition(sourceStates, Seq(new AfterCondition[E](milliseconds)))
-    }
+    def after(milliseconds: Long): DefiningTransition = new DefiningTransition(sourceStates, Seq(new AfterCondition[E](milliseconds)))
 
     def onEvents(events: E*): DefiningTransition = {
       val condition = if (events.length == 1) {
@@ -108,15 +84,11 @@ class DslStateMachineBuilder[T, E, P <: Ordered[P]](defaultPriority: P) {
       this
     }
 
-    def log(logText: String): DefiningTransition = {
-      doing(new LogAction(logText))
-    }
+    def log(logText: String): DefiningTransition = doing(new LogAction(logText))
 
 
     def goTo(destinationState: T): DefiningState = {
-      for (sourceState <- sourceStates) {
-        builder.addTransition(new Transition[T, E, P](sourceState, destinationState, conditions, priority, actions))
-      }
+      sourceStates.foreach(sourceState => builder.addTransition(new Transition[T, E, P](sourceState, destinationState, conditions, priority, actions)))
       new DefiningState(sourceStates)
     }
 
@@ -126,17 +98,10 @@ class DslStateMachineBuilder[T, E, P <: Ordered[P]](defaultPriority: P) {
     }
   }
 
-  def build(): StateMachine[T, E, P] = {
-    builder.build()
-  }
+  def build(): StateMachine[T, E, P] = builder.build()
 
-  def state(state: T): DefiningState = {
-    states(state)
-  }
+  def state(state: T): DefiningState = states(state)
 
-  def states(states: T*): DefiningState = {
-    new DefiningState(mutable.HashSet[T](states: _*))
-  }
-
+  def states(states: T*): DefiningState = new DefiningState(mutable.HashSet[T](states: _*))
 }
 
