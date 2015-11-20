@@ -4,6 +4,8 @@ version := "1.0"
 
 scalaVersion := "2.11.7"
 
+sbtVersion := "0.13.9"
+
 seq(bintraySettings:_*)
 
 libraryDependencies ++= Seq(
