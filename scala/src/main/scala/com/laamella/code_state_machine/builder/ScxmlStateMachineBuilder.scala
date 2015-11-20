@@ -49,7 +49,7 @@ import scala.collection.mutable
   * <td>parallel states (treated as normal states)
   * </tr>
   */
-abstract class ScxmlStateMachineBuilder[T, E](inputSource: InputSource) extends StateMachineBuilder[T, E, AutomaticPriority] with Logging {
+abstract class ScxmlStateMachineBuilder[State, Event](inputSource: InputSource) extends StateMachineBuilder[State, Event, AutomaticPriority] with Logging {
   private val TRANSITION_ELEMENT = "transition"
   private val PARALLEL_ELEMENT = "parallel"
   private val CONDITION_ATTRIBUTE = "cond"
@@ -63,7 +63,7 @@ abstract class ScxmlStateMachineBuilder[T, E](inputSource: InputSource) extends 
 
   private val documentBuilderFactory = DocumentBuilderFactory.newInstance()
 
-  def build(machine: StateMachine[T, E, AutomaticPriority]): StateMachine[T, E, AutomaticPriority] = {
+  def build(machine: StateMachine[State, Event, AutomaticPriority]): StateMachine[State, Event, AutomaticPriority] = {
     val documentBuilder = documentBuilderFactory.newDocumentBuilder()
     val root = documentBuilder.parse(inputSource).getChildNodes.item(0).asInstanceOf[Element]
 
@@ -71,7 +71,7 @@ abstract class ScxmlStateMachineBuilder[T, E](inputSource: InputSource) extends 
     machine
   }
 
-  private def parseState(stateElement: Element): T = {
+  private def parseState(stateElement: Element): State = {
     if (stateElement.hasAttribute(INITIAL_ATTRIBUTE)) {
       val initialState = interpretStateName(stateElement.getAttribute(INITIAL_ATTRIBUTE))
       addStartState(initialState)
@@ -93,7 +93,7 @@ abstract class ScxmlStateMachineBuilder[T, E](inputSource: InputSource) extends 
           if (subElement.hasAttribute(TARGET_ATTRIBUTE)) {
             val targetState = interpretStateName(subElement.getAttribute(TARGET_ATTRIBUTE))
 
-            val conditions = new mutable.MutableList[Condition[E]]()
+            val conditions = new mutable.MutableList[Condition[Event]]()
             if (subElement.hasAttribute(CONDITION_ATTRIBUTE)) {
               conditions += interpretCondition(subElement.getAttribute(CONDITION_ATTRIBUTE))
             }
@@ -104,7 +104,7 @@ abstract class ScxmlStateMachineBuilder[T, E](inputSource: InputSource) extends 
             }
 
             // TODO do something about priorities
-            addTransition(new Transition[T, E, AutomaticPriority](state, targetState, conditions, new AutomaticPriority, actions))
+            addTransition(new Transition[State, Event, AutomaticPriority](state, targetState, conditions, new AutomaticPriority, actions))
           } else {
             warn("State " + stateName + " has a transition going nowhere.")
           }
@@ -120,8 +120,8 @@ abstract class ScxmlStateMachineBuilder[T, E](inputSource: InputSource) extends 
 
   protected def interpretEvent(attribute: String): () => Unit
 
-  protected def interpretCondition(attribute: String): Condition[E]
+  protected def interpretCondition(attribute: String): Condition[Event]
 
-  protected def interpretStateName(name: String): T
+  protected def interpretStateName(name: String): State
 
 }

@@ -7,15 +7,15 @@ import scala.collection.mutable
 /**
   * A condition that is met or not.
   *
-  * E is the event type.
+  * Event is the event type.
   */
-trait Condition[E] {
+trait Condition[Event] {
   /**
     * Handle an event.
     *
     * @param event the event that has occurred.
     */
-  def handleEvent(event: E): Unit
+  def handleEvent(event: Event): Unit
 
   /**
     * @return whether the condition is met.
@@ -32,21 +32,17 @@ trait Condition[E] {
 
 /**
   * A conditional transition between two states.
-  *
-  * @tparam T type of state.
-  * @tparam E type of event.
-  * @tparam P type of priority.
   */
-class Transition[T, E, P <: Ordered[P]](
-                                         val sourceState: T,
-                                         val destinationState: T,
-                                         val conditions: Seq[Condition[E]],
-                                         val priority: P,
-                                         val actions: Seq[() => Unit]) extends Ordered[Transition[T, E, P]] {
+class Transition[State, Event, Priority <: Ordered[Priority]](
+                                         val sourceState: State,
+                                         val destinationState: State,
+                                         val conditions: Seq[Condition[Event]],
+                                         val priority: Priority,
+                                         val actions: Seq[() => Unit]) extends Ordered[Transition[State, Event, Priority]] {
   override def toString = s"Transition from $sourceState to $destinationState, condition $conditions, action $actions, priority $priority"
 
   /** Compares transitions on their priorities. */
-  override def compare(that: Transition[T, E, P]): Int = priority.compareTo(that.priority)
+  override def compare(that: Transition[State, Event, Priority]): Int = priority.compareTo(that.priority)
 }
 
 /**
@@ -81,28 +77,30 @@ class Transition[T, E, P <: Ordered[P]](
   * change the user code state.
   * </ul>
   *
+  * Build this machine by using one of the builders, not by using this constructor.
+  *
   * @param startStates the states that are active at startup, or after a reset()
   * @param endStates a state that can be reached, but is never added to the active states. The machine is finished when no states are active, which can be achieved by having the active states transition to an end state.
   * @param exitEvents triggered when a specific state is exited
   * @param entryEvents triggered when a specific state is entered
   * @param transitions all the transitions, structured as "starting from this event, a sequence of possible transitions in order of priority"
   *
-  * @tparam T State type. Each state should have a single instance of this type.
+  * @tparam State State type. Each state should have a single instance of this type.
   *           An enum is a good fit.
-  * @tparam E Event type. Events come into the state machine from the outside
+  * @tparam Event Event type. Events come into the state machine from the outside
   *           world, and are used to trigger state transitions.
-  * @tparam P Priority type. Will be used to give priorities to transitions.
+  * @tparam Priority Priority type. Will be used to give priorities to transitions.
   *           Enums and Integers are useful here.
   */
-class StateMachine[T, E, P <: Ordered[P]](
-                                           val startStates: Set[T],
-                                           val endStates: Set[T],
-                                           val exitEvents: Map[T, Seq[() => Unit]],
-                                           val entryEvents: Map[T, Seq[() => Unit]],
-                                           val transitions: Map[T, Seq[Transition[T, E, P]]]) extends Logging {
+class StateMachine[State, Event, Priority <: Ordered[Priority]](
+                                           val startStates: Set[State],
+                                           val endStates: Set[State],
+                                           val exitEvents: Map[State, Seq[() => Unit]],
+                                           val entryEvents: Map[State, Seq[() => Unit]],
+                                           val transitions: Map[State, Seq[Transition[State, Event, Priority]]]) extends Logging {
 
   // TODO change to immutable
-  val activeStates = mutable.HashSet[T]()
+  val activeStates = mutable.HashSet[State]()
 
   debug("New Machine")
   reset()
@@ -122,7 +120,7 @@ class StateMachine[T, E, P <: Ordered[P]](
   /**
     * @return whether state is currently active.
     */
-  def active(state: T): Boolean = activeStates.contains(state)
+  def active(state: State): Boolean = activeStates.contains(state)
 
   /**
     * @return whether no states are active. Can be caused by all active states
@@ -138,7 +136,7 @@ class StateMachine[T, E, P <: Ordered[P]](
     *
     * @param event some event that has happened.
     */
-  def handleEvent(event: E): Unit = {
+  def handleEvent(event: Event): Unit = {
     debug(s"handle event $event")
 
     for (sourceState <- activeStates;
@@ -175,16 +173,16 @@ class StateMachine[T, E, P <: Ordered[P]](
     */
   def poll(): Unit = {
     var stillNewTransitionsFiring = true
-    val transitionsThatHaveFiredBefore = mutable.HashSet[Transition[T, E, P]]()
+    val transitionsThatHaveFiredBefore = mutable.HashSet[Transition[State, Event, Priority]]()
 
     do {
       stillNewTransitionsFiring = false
-      val statesToExit = mutable.HashSet[T]()
-      val transitionsToFire = mutable.HashSet[Transition[T, E, P]]()
-      val statesToEnter = mutable.HashSet[T]()
+      val statesToExit = mutable.HashSet[State]()
+      val transitionsToFire = mutable.HashSet[Transition[State, Event, Priority]]()
+      val statesToEnter = mutable.HashSet[State]()
 
       for (sourceState <- activeStates) {
-        var firingPriority: Option[P] = None
+        var firingPriority: Option[Priority] = None
         // Check all possible transitions from one active state.
         for (transition <- transitions(sourceState)) {
           // Never fire a transition more than once in one poll.
@@ -206,7 +204,7 @@ class StateMachine[T, E, P <: Ordered[P]](
 
       statesToExit.foreach(exitState)
 
-      for (transitionToFire: Transition[T, E, P] <- transitionsToFire) {
+      for (transitionToFire: Transition[State, Event, Priority] <- transitionsToFire) {
         transitionToFire.actions.foreach(_ ())
         transitionsThatHaveFiredBefore += transitionToFire
         stillNewTransitionsFiring = true
@@ -217,7 +215,7 @@ class StateMachine[T, E, P <: Ordered[P]](
     } while (stillNewTransitionsFiring)
   }
 
-  private def exitState(state: T): Unit = {
+  private def exitState(state: State): Unit = {
     debug(s"exit state $state")
     if (activeStates.contains(state)) {
       executeExitActions(state)
@@ -225,7 +223,7 @@ class StateMachine[T, E, P <: Ordered[P]](
     }
   }
 
-  private def enterState(newState: T): Unit = {
+  private def enterState(newState: State): Unit = {
     if (endStates.contains(newState)) {
       debug(s"enter end state $newState")
       executeEntryActions(newState)
@@ -241,15 +239,15 @@ class StateMachine[T, E, P <: Ordered[P]](
     }
   }
 
-  private def resetTransitions(sourceState: T): Unit = {
+  private def resetTransitions(sourceState: State): Unit = {
     transitions.get(sourceState).foreach(_.foreach(_.conditions.foreach(_.reset())))
   }
 
-  private def executeExitActions(state: T): Unit = {
+  private def executeExitActions(state: State): Unit = {
     exitEvents.get(state).foreach(_.foreach(_ ()))
   }
 
-  private def executeEntryActions(state: T): Unit = {
+  private def executeEntryActions(state: State): Unit = {
     entryEvents.get(state).foreach(_.foreach(_ ()))
   }
 }

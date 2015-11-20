@@ -8,11 +8,11 @@ import scala.collection.mutable
 /**
   * A pretty "DSL" builder for a state machine.
   */
-class DslStateMachineBuilder[T, E, P <: Ordered[P]](defaultPriority: P) {
-  private val builder = new StateMachineBuilder[T, E, P]()
+class DslStateMachineBuilder[State, Event, Priority <: Ordered[Priority]](defaultPriority: Priority) {
+  private val builder = new StateMachineBuilder[State, Event, Priority]()
 
-  class DefiningState(sourceStates: mutable.Set[T]) {
-    def except(states: T*): DefiningState = {
+  class DefiningState(sourceStates: mutable.Set[State]) {
+    def except(states: State*): DefiningState = {
       states.foreach(sourceStates.remove)
       this
     }
@@ -45,36 +45,36 @@ class DslStateMachineBuilder[T, E, P <: Ordered[P]](defaultPriority: P) {
 
     def areStartStates: DefiningState = isAStartState
 
-    def when(conditions: Condition[E]*): DefiningTransition = new DefiningTransition(sourceStates, conditions)
+    def when(conditions: Condition[Event]*): DefiningTransition = new DefiningTransition(sourceStates, conditions)
 
-    def always: DefiningTransition = new DefiningTransition(sourceStates, Seq(new AlwaysCondition[E]()))
+    def always: DefiningTransition = new DefiningTransition(sourceStates, Seq(new AlwaysCondition[Event]()))
 
-    def never: DefiningTransition = new DefiningTransition(sourceStates, Seq(new NeverCondition[E]()))
+    def never: DefiningTransition = new DefiningTransition(sourceStates, Seq(new NeverCondition[Event]()))
 
-    def after(milliseconds: Long): DefiningTransition = new DefiningTransition(sourceStates, Seq(new AfterCondition[E](milliseconds)))
+    def after(milliseconds: Long): DefiningTransition = new DefiningTransition(sourceStates, Seq(new AfterCondition[Event](milliseconds)))
 
-    def onEvents(events: E*): DefiningTransition = {
+    def onEvents(events: Event*): DefiningTransition = {
       val condition = if (events.length == 1) {
         val singleEvent = events(0)
-        new SingleEventMatchCondition[E](singleEvent)
+        new SingleEventMatchCondition[Event](singleEvent)
       } else {
-        new MultiEventMatchCondition[E](events: _*)
+        new MultiEventMatchCondition[Event](events: _*)
       }
       new DefiningTransition(sourceStates, Seq(condition))
     }
 
     // FIXME find a way to rescue these conditions
-    //  def active(statesThatMustBeActive: T*): Condition[E] = {
-    //    new StatesActiveCondition[T, E, P](machine, statesThatMustBeActive: _*)
-    //  }
+//      def active(statesThatMustBeActive: State*): Condition[Event] = {
+//        new StatesActiveCondition[State, Event, Priority](machine, statesThatMustBeActive: _*)
+//      }
     //
-    //  def inactive(statesThatMustBeInactive: T*): Condition[E] = {
-    //    new StatesInactiveCondition[T, E, P](machine, statesThatMustBeInactive: _*)
-    //  }
+//      def inactive(statesThatMustBeInactive: State*): Condition[Event] = {
+//        new StatesInactiveCondition[State, Event, Priority](machine, statesThatMustBeInactive: _*)
+//      }
 
   }
 
-  class DefiningTransition(sourceStates: mutable.Set[T], conditions: Seq[Condition[E]]) {
+  class DefiningTransition(sourceStates: mutable.Set[State], conditions: Seq[Condition[Event]]) {
     private val actions = mutable.MutableList[() => Unit]()
     private var priority = defaultPriority
 
@@ -86,21 +86,21 @@ class DslStateMachineBuilder[T, E, P <: Ordered[P]](defaultPriority: P) {
     def log(logText: String): DefiningTransition = doing(new LogAction(logText))
 
 
-    def goTo(destinationState: T): DefiningState = {
-      sourceStates.foreach(sourceState => builder.addTransition(new Transition[T, E, P](sourceState, destinationState, conditions, priority, actions)))
+    def goTo(destinationState: State): DefiningState = {
+      sourceStates.foreach(sourceState => builder.addTransition(new Transition[State, Event, Priority](sourceState, destinationState, conditions, priority, actions)))
       new DefiningState(sourceStates)
     }
 
-    def withPrio(priority: P): DefiningTransition = {
+    def withPrio(priority: Priority): DefiningTransition = {
       this.priority = priority
       this
     }
   }
 
-  def build(): StateMachine[T, E, P] = builder.build()
+  def build(): StateMachine[State, Event, Priority] = builder.build()
 
-  def state(state: T): DefiningState = states(state)
+  def state(state: State): DefiningState = states(state)
 
-  def states(states: T*): DefiningState = new DefiningState(mutable.HashSet[T](states: _*))
+  def states(states: State*): DefiningState = new DefiningState(mutable.HashSet[State](states: _*))
 }
 

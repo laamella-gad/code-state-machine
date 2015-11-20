@@ -7,8 +7,8 @@ import com.laamella.code_state_machine.Transition
  * Creates a simple "dot" diagram of the state machine. Start states are double
  * circles, end states are dotted circles, entry and exit events are not shown.
  */
-class DotOutput[T, E, P <: Ordered[P]] {
-	def getOutput(machine: StateMachine[T, E, P] ): String = {
+class DotOutput[State, Event, Priority <: Ordered[Priority]] {
+	def getOutput(machine: StateMachine[State, Event, Priority] ): String = {
 
 		val output = new StringBuilder()
 		output.append("digraph finite_state_machine {\n")
