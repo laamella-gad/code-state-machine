@@ -16,7 +16,7 @@ class AfterCondition[Event](milliseconds: Long) extends NonEventBasedCondition[E
   * This condition is always met.
   */
 final class AlwaysCondition[Event] extends NonEventBasedCondition[Event] {
-  /** @return whether the condition is met. */
+  /** Return whether the condition is met. */
   override def isMet: Boolean = true
 
   override def toString = "always"

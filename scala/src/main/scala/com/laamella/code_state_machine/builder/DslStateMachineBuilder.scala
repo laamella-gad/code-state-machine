@@ -7,6 +7,13 @@ import scala.collection.mutable
 
 /**
   * A pretty "DSL" builder for a state machine.
+  *
+  * @tparam State State type. Each state should have a single instance of this type.
+  *           An enum is a good fit.
+  * @tparam Event Event type. Events come into the state machine from the outside
+  *           world, and are used to trigger state transitions.
+  * @tparam Priority Priority type. Will be used to give priorities to transitions.
+  *           Enums and Integers are useful here.
   */
 class DslStateMachineBuilder[State, Event, Priority <: Ordered[Priority]](defaultPriority: Priority) {
   private val builder = new StateMachineBuilder[State, Event, Priority]()

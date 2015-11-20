@@ -18,7 +18,7 @@ trait Condition[Event] {
   def handleEvent(event: Event): Unit
 
   /**
-    * @return whether the condition is met.
+    * Return whether the condition is met.
     */
   def isMet: Boolean
 
@@ -34,11 +34,11 @@ trait Condition[Event] {
   * A conditional transition between two states.
   */
 class Transition[State, Event, Priority <: Ordered[Priority]](
-                                         val sourceState: State,
-                                         val destinationState: State,
-                                         val conditions: Seq[Condition[Event]],
-                                         val priority: Priority,
-                                         val actions: Seq[() => Unit]) extends Ordered[Transition[State, Event, Priority]] {
+                                                               val sourceState: State,
+                                                               val destinationState: State,
+                                                               val conditions: Seq[Condition[Event]],
+                                                               val priority: Priority,
+                                                               val actions: Seq[() => Unit]) extends Ordered[Transition[State, Event, Priority]] {
   override def toString = s"Transition from $sourceState to $destinationState, condition $conditions, action $actions, priority $priority"
 
   /** Compares transitions on their priorities. */
@@ -46,37 +46,6 @@ class Transition[State, Event, Priority <: Ordered[Priority]](
 }
 
 /**
-  * A programmer friendly state machine.
-  * <p/>
-  * Features:
-  * <ul>
-  * <li>It is non-deterministic, but has the tools to become deterministic.</li>
-  * <li>It allows multiple start states.</li>
-  * <li>It allows multiple active states.</li>
-  * <li>It allows multiple end states.</li>
-  * <li>States and their transitions do not have to form a single graph. Separate
-  * graphs may exist inside a single state machine.</li>
-  * <li>Each state has a chain of entry and exit actions.</li>
-  * <li>Each transition has a chain of actions.</li>
-  * <li>It does not do any kind of compilation.</li>
-  * <li>Its code is written in a straightforward way, and is hopefully easy to
-  * understand.</li>
-  * <li>It has a priority system for transitions.</li>
-  * <li>It does not have sub state machines; a state machine is not a state.</li>
-  * <li>It has transitions that use a state machine for their condition.</li>
-  * <li>With the DSL, transitions to a certain state can be added for multiple
-  * source states, thereby faking global transitions.</li>
-  * <li>It tries to put as few constraints as possible on the user.</li>
-  * <li>It has only one dependency: slf4j for logging, which can be configured to
-  * use any other logging framework.</li>
-  * <li>The state type can be anything.</li>
-  * <li>The event type can be anything.</li>
-  * <li>The priority type can be anything as long as it's Ordered.</li>
-  * <li>It has two, always accessible modes of usage: asking the state machine
-  * for the current state, or having the state machine trigger actions that
-  * change the user code state.
-  * </ul>
-  *
   * Build this machine by using one of the builders, not by using this constructor.
   *
   * @param startStates the states that are active at startup, or after a reset()
@@ -84,23 +53,19 @@ class Transition[State, Event, Priority <: Ordered[Priority]](
   * @param exitEvents triggered when a specific state is exited
   * @param entryEvents triggered when a specific state is entered
   * @param transitions all the transitions, structured as "starting from this event, a sequence of possible transitions in order of priority"
-  *
-  * @tparam State State type. Each state should have a single instance of this type.
-  *           An enum is a good fit.
-  * @tparam Event Event type. Events come into the state machine from the outside
-  *           world, and are used to trigger state transitions.
-  * @tparam Priority Priority type. Will be used to give priorities to transitions.
-  *           Enums and Integers are useful here.
   */
 class StateMachine[State, Event, Priority <: Ordered[Priority]](
-                                           val startStates: Set[State],
-                                           val endStates: Set[State],
-                                           val exitEvents: Map[State, Seq[() => Unit]],
-                                           val entryEvents: Map[State, Seq[() => Unit]],
-                                           val transitions: Map[State, Seq[Transition[State, Event, Priority]]]) extends Logging {
+                                                                 val startStates: Set[State],
+                                                                 val endStates: Set[State],
+                                                                 val exitEvents: Map[State, Seq[() => Unit]],
+                                                                 val entryEvents: Map[State, Seq[() => Unit]],
+                                                                 val transitions: Map[State, Seq[Transition[State, Event, Priority]]]) extends Logging {
 
   // TODO change to immutable
-  val activeStates = mutable.HashSet[State]()
+  private var _activeStates = Set[State]()
+
+  /** The currently active states. Updated with a call to poll() */
+  def activeStates: Set[State] = _activeStates
 
   debug("New Machine")
   reset()
@@ -113,21 +78,21 @@ class StateMachine[State, Event, Priority <: Ordered[Priority]](
     if (startStates.isEmpty) {
       warn("State machine does not contain any start states.")
     }
-    activeStates.clear()
+    _activeStates = Set()
     startStates.foreach(enterState)
   }
 
   /**
-    * @return whether state is currently active.
+    * Return whether state is currently active.
     */
-  def active(state: State): Boolean = activeStates.contains(state)
+  def active(state: State): Boolean = _activeStates.contains(state)
 
   /**
-    * @return whether no states are active. Can be caused by all active states
-    *         having disappeared into end states, or by having no start states
-    *         at all.
+    * Return whether no states are active. Can be caused by all active states
+    * having disappeared into end states, or by having no start states
+    * at all.
     */
-  def finished = activeStates.isEmpty
+  def finished = _activeStates.isEmpty
 
   /**
     * Handle an event coming from the user application. After sending the event
@@ -139,7 +104,7 @@ class StateMachine[State, Event, Priority <: Ordered[Priority]](
   def handleEvent(event: Event): Unit = {
     debug(s"handle event $event")
 
-    for (sourceState <- activeStates;
+    for (sourceState <- _activeStates;
          transition <- transitions(sourceState)) {
       transition.conditions.foreach(_.handleEvent(event))
     }
@@ -181,7 +146,7 @@ class StateMachine[State, Event, Priority <: Ordered[Priority]](
       val transitionsToFire = mutable.HashSet[Transition[State, Event, Priority]]()
       val statesToEnter = mutable.HashSet[State]()
 
-      for (sourceState <- activeStates) {
+      for (sourceState <- _activeStates) {
         var firingPriority: Option[Priority] = None
         // Check all possible transitions from one active state.
         for (transition <- transitions(sourceState)) {
@@ -212,14 +177,18 @@ class StateMachine[State, Event, Priority <: Ordered[Priority]](
 
       statesToEnter.foreach(enterState)
 
+      if (_activeStates.isEmpty) {
+        debug(s"machine is finished")
+      }
+
     } while (stillNewTransitionsFiring)
   }
 
   private def exitState(state: State): Unit = {
     debug(s"exit state $state")
-    if (activeStates.contains(state)) {
+    if (_activeStates.contains(state)) {
       executeExitActions(state)
-      activeStates.remove(state)
+      _activeStates = _activeStates - state
     }
   }
 
@@ -227,13 +196,9 @@ class StateMachine[State, Event, Priority <: Ordered[Priority]](
     if (endStates.contains(newState)) {
       debug(s"enter end state $newState")
       executeEntryActions(newState)
-      if (activeStates.isEmpty) {
-        debug(s"machine is finished")
-      }
-      return
-    }
-    if (activeStates.add(newState)) {
+    } else if (!_activeStates.contains(newState)) {
       debug(s"enter state $newState")
+      _activeStates = _activeStates + newState
       executeEntryActions(newState)
       resetTransitions(newState)
     }
