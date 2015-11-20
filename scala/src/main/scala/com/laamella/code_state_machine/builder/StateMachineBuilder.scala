@@ -6,7 +6,7 @@ import grizzled.slf4j.Logger
 import scala.collection.mutable
 
 /**
-  * Interface that all builder should adhere to.
+  * A builder that can be used to create more complex builders.
   */
 class StateMachineBuilder[T, E, P <: Ordered[P]] {
   private lazy val log = Logger(getClass)

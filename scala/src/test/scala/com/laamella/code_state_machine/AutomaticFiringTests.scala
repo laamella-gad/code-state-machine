@@ -11,11 +11,11 @@ import org.scalatest.Assertions._
 
 class AutomaticFiringTests extends UnitSpec with Logging {
   val builder = new DslStateMachineBuilder[SimpleState, Object, LeveledPriority.Value](NORMAL)
-  builder.state(A).isAStartState().always().goTo(B)
-  builder.state(B).always().goTo(C)
-  builder.state(C).always().goTo(D)
-  builder.state(D).always().goTo(E)
-  builder.state(E).isAnEndState()
+  builder.state(A).isAStartState.always.goTo(B)
+  builder.state(B).always.goTo(C)
+  builder.state(C).always.goTo(D)
+  builder.state(D).always.goTo(E)
+  builder.state(E).isAnEndState
 
   val machine = builder.build()
 

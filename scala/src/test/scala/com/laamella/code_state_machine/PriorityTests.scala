@@ -12,8 +12,8 @@ class PriorityTests extends UnitSpec with BeforeAndAfterEach {
 
   override def beforeEach() {
     builder = new DslStateMachineBuilder[SimpleState, Object, Value](NORMAL)
-    builder.state(A).isAStartState()
-    builder.state(B).isAnEndState()
+    builder.state(A).isAStartState
+    builder.state(B).isAnEndState
 
     trace = new StringBuilder()
   }
@@ -25,9 +25,9 @@ class PriorityTests extends UnitSpec with BeforeAndAfterEach {
   behavior of "transitions with priorities"
 
   they should "only fire when they have the highest priority" in {
-    builder.state(A).always().withPrio(HIGH).doing(trace("H")).goTo(B)
-    builder.state(A).always().withPrio(NORMAL).doing(trace("N")).goTo(B)
-    builder.state(A).always().withPrio(LOWEST).doing(trace("L")).goTo(B)
+    builder.state(A).always.withPrio(HIGH).doing(trace("H")).goTo(B)
+    builder.state(A).always.withPrio(NORMAL).doing(trace("N")).goTo(B)
+    builder.state(A).always.withPrio(LOWEST).doing(trace("L")).goTo(B)
     val machine = builder.build()
 
     machine.poll()
@@ -36,10 +36,10 @@ class PriorityTests extends UnitSpec with BeforeAndAfterEach {
   }
 
   they should "only fire when their condition is met, even though higher priority transactions exist" in {
-    builder.state(A).never().withPrio(HIGH).doing(trace("H")).goTo(B)
-    builder.state(A).never().withPrio(NORMAL).doing(trace("N")).goTo(B)
-    builder.state(A).always().withPrio(NORMAL).doing(trace("N")).goTo(B)
-    builder.state(A).always().withPrio(NORMAL).doing(trace("N")).goTo(B)
+    builder.state(A).never.withPrio(HIGH).doing(trace("H")).goTo(B)
+    builder.state(A).never.withPrio(NORMAL).doing(trace("N")).goTo(B)
+    builder.state(A).always.withPrio(NORMAL).doing(trace("N")).goTo(B)
+    builder.state(A).always.withPrio(NORMAL).doing(trace("N")).goTo(B)
     val machine = builder.build()
 
     machine.poll()
@@ -48,9 +48,9 @@ class PriorityTests extends UnitSpec with BeforeAndAfterEach {
   }
 
   they should "fire together when they have the same priority" in {
-    builder.state(A).always().doing(trace("H")).withPrio(HIGH).goTo(B)
-    builder.state(A).always().doing(trace("H")).withPrio(HIGH).goTo(B)
-    builder.state(A).always().doing(trace("L")).withPrio(LOWEST).goTo(B)
+    builder.state(A).always.doing(trace("H")).withPrio(HIGH).goTo(B)
+    builder.state(A).always.doing(trace("H")).withPrio(HIGH).goTo(B)
+    builder.state(A).always.doing(trace("L")).withPrio(LOWEST).goTo(B)
     val machine = builder.build()
 
     machine.poll()

@@ -2,7 +2,7 @@ package com.laamella.code_state_machine.action
 
 import java.lang.Thread.State
 
-import com.laamella.code_state_machine.condition.NonEventBasedCondition
+import com.laamella.code_state_machine.NonEventBasedCondition
 
 /**
  * This action starts a separate work thread with user code. A transition can
@@ -23,5 +23,5 @@ abstract class TaskAction[E] extends Runnable with FinishableAction[E] {
     taskThread.start()
   }
 
-  override def isFinished = finishedCondition
+  override def finished = finishedCondition
 }

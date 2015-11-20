@@ -15,7 +15,7 @@ trait Condition[E] {
     *
     * @param event the event that has occurred.
     */
-  def handleEvent(event: E)
+  def handleEvent(event: E): Unit
 
   /**
     * @return whether the condition is met.
@@ -110,7 +110,7 @@ class StateMachine[T, E, P <: Ordered[P]](
   /**
     * Resets all active states to the start states.
     */
-  def reset() {
+  def reset(): Unit = {
     debug("reset()")
     if (startStates.isEmpty) {
       warn("State machine does not contain any start states.")
@@ -138,7 +138,7 @@ class StateMachine[T, E, P <: Ordered[P]](
     *
     * @param event some event that has happened.
     */
-  def handleEvent(event: E) {
+  def handleEvent(event: E): Unit = {
     debug(s"handle event $event")
 
     for (sourceState <- activeStates;
@@ -173,7 +173,7 @@ class StateMachine[T, E, P <: Ordered[P]](
     * machine by only considering transitions that have not fired before in
     * this poll.
     */
-  def poll() {
+  def poll(): Unit = {
     var stillNewTransitionsFiring = true
     val transitionsThatHaveFiredBefore = mutable.HashSet[Transition[T, E, P]]()
 
@@ -185,20 +185,20 @@ class StateMachine[T, E, P <: Ordered[P]](
 
       for (sourceState <- activeStates) {
         var firingPriority: Option[P] = None
+        // Check all possible transitions from one active state.
         for (transition <- transitions(sourceState)) {
+          // Never fire a transition more than once in one poll.
           if (!transitionsThatHaveFiredBefore.contains(transition)) {
-            // TODO put in 1 expression
-            if (firingPriority.isDefined && transition.priority != firingPriority.get) {
-              // We reached a lower prio while higher prio transitions are firing.
-              // Don't consider these anymore, go to the next source state.
-
-              // TODO
-              //							break;
-            } else if (transition.conditions.forall(_.isMet)) {
-              statesToExit.add(sourceState)
-              transitionsToFire.add(transition)
-              statesToEnter.add(transition.destinationState)
-              firingPriority = Some(transition.priority)
+            // Don't fire lower priorities for a state that already has higher prio transitions firing.
+            // This takes advantage of the transitions being in order of priority.
+            if (firingPriority.isEmpty || firingPriority.contains(transition.priority)) {
+              // Only fire if all conditions are met.
+              if (transition.conditions.forall(_.isMet)) {
+                statesToExit += sourceState
+                transitionsToFire += transition
+                statesToEnter += transition.destinationState
+                firingPriority = Some(transition.priority)
+              }
             }
           }
         }
@@ -217,7 +217,7 @@ class StateMachine[T, E, P <: Ordered[P]](
     } while (stillNewTransitionsFiring)
   }
 
-  private def exitState(state: T) {
+  private def exitState(state: T): Unit = {
     debug(s"exit state $state")
     if (activeStates.contains(state)) {
       executeExitActions(state)
@@ -225,7 +225,7 @@ class StateMachine[T, E, P <: Ordered[P]](
     }
   }
 
-  private def enterState(newState: T) {
+  private def enterState(newState: T): Unit = {
     if (endStates.contains(newState)) {
       debug(s"enter end state $newState")
       executeEntryActions(newState)
@@ -241,15 +241,15 @@ class StateMachine[T, E, P <: Ordered[P]](
     }
   }
 
-  private def resetTransitions(sourceState: T) {
+  private def resetTransitions(sourceState: T): Unit = {
     transitions.get(sourceState).foreach(_.foreach(_.conditions.foreach(_.reset())))
   }
 
-  private def executeExitActions(state: T) {
+  private def executeExitActions(state: T): Unit = {
     exitEvents.get(state).foreach(_.foreach(_ ()))
   }
 
-  private def executeEntryActions(state: T) {
+  private def executeEntryActions(state: T): Unit = {
     entryEvents.get(state).foreach(_.foreach(_ ()))
   }
 }

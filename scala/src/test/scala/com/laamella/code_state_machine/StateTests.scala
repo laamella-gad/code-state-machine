@@ -6,8 +6,6 @@ import com.laamella.code_state_machine.io.DotOutput
 import com.laamella.code_state_machine.priority.LeveledPriority
 import com.laamella.code_state_machine.priority.LeveledPriority.NORMAL
 import grizzled.slf4j.Logging
-import org.junit.{Before, Test}
-import org.scalatest.Assertions._
 import org.scalatest.BeforeAndAfterEach
 
 class StateTests extends UnitSpec with BeforeAndAfterEach with Logging {
@@ -17,7 +15,7 @@ class StateTests extends UnitSpec with BeforeAndAfterEach with Logging {
     val builder = new DslStateMachineBuilder[GameState, GameEvent, LeveledPriority.Value](NORMAL)
     builder.state(LOADER).onExitLog("exit!").onEntryLog("enter!")
 
-    builder.state(LOADER).isAStartState().onEvents(DONE).log("bing!").goTo(INTRO)
+    builder.state(LOADER).isAStartState.onEvents(DONE).log("bing!").goTo(INTRO)
     builder.state(INTRO).onEvents(DONE).goTo(MENU)
     builder.state(MENU).onEvents(START).goTo(GET_READY).onEvents(ESCAPE).goTo(EXIT)
     builder.state(GET_READY).onEvents(DONE).goTo(LEVEL)
@@ -31,7 +29,7 @@ class StateTests extends UnitSpec with BeforeAndAfterEach with Logging {
 
     builder.state(CONFIGURATION).onEvents(FIRE_A).goTo(INTRO)
 
-    builder.state(EXIT).isAnEndState()
+    builder.state(EXIT).isAnEndState
 
     gameMachine = builder.build()
     trace("\n" + new DotOutput[GameState, GameEvent, LeveledPriority.Value]().getOutput(gameMachine))
@@ -78,10 +76,5 @@ class StateTests extends UnitSpec with BeforeAndAfterEach with Logging {
     gameMachine.handleEvent(DONE)
     gameMachine.reset()
     assertActive(gameMachine, LOADER)
-  }
-
-  it should "aaa" in {
-    val result: Boolean = List(true, false, true).foldLeft(true)(_ && _)
-    println(result)
   }
 }

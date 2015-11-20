@@ -1,10 +1,9 @@
 package com.laamella.code_state_machine.builder
 
 import com.laamella.code_state_machine.action.LogAction
-import com.laamella.code_state_machine.condition.AlwaysCondition
 import com.laamella.code_state_machine.io.DotOutput
 import com.laamella.code_state_machine.priority.AutomaticPriority
-import com.laamella.code_state_machine.{Condition, UnitSpec}
+import com.laamella.code_state_machine.{AlwaysCondition, Condition, UnitSpec}
 import org.xml.sax.InputSource
 
 class ScxmlParserTest extends UnitSpec {
