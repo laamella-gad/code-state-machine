@@ -11,44 +11,44 @@ import org.xml.sax.InputSource
 import scala.collection.mutable
 
 /**
- * A State machine builder that attempts to read the <a
- * href="http://www.w3.org/TR/scxml/">SCXML</a> format. Since many features are
- * mismatched, it does not do a very good job.
- * <table>
- * <tr>
- * <td>Supported?
- * <td>Feature
- * </tr>
- * <tr>
- * <td>&#x2713;
- * <td>normal/start/end states
- * </tr>
- * <tr>
- * <td>&#x2713; / &#x2717;
- * <td>on entry/on exit events (interpretation is up to the user)
- * </tr>
- * <tr>
- * <td>&#x2713; / &#x2717;
- * <td>event (action) on transition (interpretation is up to the user)
- * </tr>
- * <tr>
- * <td>&#x2713; / &#x2717;
- * <td>(pre)conditions for transitions (interpretation is up to the user)
- * </tr>
- * <tr>
- * <td>&#x2717;
- * <td>clusters, compound states, or sub state machines (treated as normal
- * states. Substates are mixed into the main state machine)
- * </tr>
- * <tr>
- * <td>&#x2717;
- * <td>executable content
- * </tr>
- * <tr>
- * <td>&#x2717;
- * <td>parallel states (treated as normal states)
- * </tr>
- */
+  * A State machine builder that attempts to read the <a
+  * href="http://www.w3.org/TR/scxml/">SCXML</a> format. Since many features are
+  * mismatched, it does not do a very good job.
+  * <table>
+  * <tr>
+  * <td>Supported?
+  * <td>Feature
+  * </tr>
+  * <tr>
+  * <td>&#x2713;
+  * <td>normal/start/end states
+  * </tr>
+  * <tr>
+  * <td>&#x2713; / &#x2717;
+  * <td>on entry/on exit events (interpretation is up to the user)
+  * </tr>
+  * <tr>
+  * <td>&#x2713; / &#x2717;
+  * <td>event (action) on transition (interpretation is up to the user)
+  * </tr>
+  * <tr>
+  * <td>&#x2713; / &#x2717;
+  * <td>(pre)conditions for transitions (interpretation is up to the user)
+  * </tr>
+  * <tr>
+  * <td>&#x2717;
+  * <td>clusters, compound states, or sub state machines (treated as normal
+  * states. Substates are mixed into the main state machine)
+  * </tr>
+  * <tr>
+  * <td>&#x2717;
+  * <td>executable content
+  * </tr>
+  * <tr>
+  * <td>&#x2717;
+  * <td>parallel states (treated as normal states)
+  * </tr>
+  */
 abstract class ScxmlStateMachineBuilder[T, E](inputSource: InputSource) extends StateMachineBuilder[T, E, AutomaticPriority] with Logging {
   private val TRANSITION_ELEMENT = "transition"
   private val PARALLEL_ELEMENT = "parallel"
@@ -80,17 +80,16 @@ abstract class ScxmlStateMachineBuilder[T, E](inputSource: InputSource) extends 
     val state = interpretStateName(stateName)
 
     val childNodes = stateElement.getChildNodes
-    for (i <- 0 to childNodes.getLength - 1) {
+    for (i <- 0 until childNodes.getLength) {
       val subNode = childNodes.item(i)
       if (subNode.getNodeType == Node.ELEMENT_NODE) {
         val subElement = subNode.asInstanceOf[Element]
         val subNodeName = subElement.getNodeName
-        if (subNodeName.equals(STATE_ELEMENT) || subNodeName.equals(STATE_ELEMENT)
-          || subNodeName.equals(PARALLEL_ELEMENT) || subNodeName.equals(ROOT_STATE_MACHINE_ELEMENT)) {
+        if (subNodeName == STATE_ELEMENT || subNodeName == STATE_ELEMENT || subNodeName == PARALLEL_ELEMENT || subNodeName == ROOT_STATE_MACHINE_ELEMENT) {
           parseState(subElement)
-        } else if (subNodeName.equals(FINAL_STATE_ELEMENT)) {
+        } else if (subNodeName == FINAL_STATE_ELEMENT) {
           addEndState(parseState(subElement))
-        } else if (subNodeName.equals(TRANSITION_ELEMENT)) {
+        } else if (subNodeName == TRANSITION_ELEMENT) {
           if (subElement.hasAttribute(TARGET_ATTRIBUTE)) {
             val targetState = interpretStateName(subElement.getAttribute(TARGET_ATTRIBUTE))
 
@@ -109,9 +108,9 @@ abstract class ScxmlStateMachineBuilder[T, E](inputSource: InputSource) extends 
           } else {
             warn("State " + stateName + " has a transition going nowhere.")
           }
-        } else if (subNodeName.equals("onentry")) {
+        } else if (subNodeName == "onentry") {
           addEntryActions(state, Seq(interpretEvent(subNode.getTextContent)))
-        } else if (subNodeName.equals("onexit")) {
+        } else if (subNodeName == "onexit") {
           addExitActions(state, Seq(interpretEvent(subNode.getTextContent)))
         }
       }

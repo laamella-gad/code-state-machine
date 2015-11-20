@@ -74,7 +74,7 @@ final class NeverCondition[E] extends NonEventBasedCondition[E] {
 final class SingleEventMatchCondition[E](singleEvent: E) extends EventBasedCondition[E] {
   override def toString = s"is $singleEvent"
 
-  override protected def conditionIsMetAfterHandlingEvent(event: E) = singleEvent equals event
+  override protected def conditionIsMetAfterHandlingEvent(event: E) = singleEvent == event
 }
 
 /** A base class for conditions that do not respond to events. */
