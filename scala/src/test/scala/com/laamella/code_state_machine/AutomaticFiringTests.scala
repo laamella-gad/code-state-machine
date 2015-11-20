@@ -10,17 +10,15 @@ import grizzled.slf4j.Logging
 import org.scalatest.Assertions._
 
 class AutomaticFiringTests extends UnitSpec with Logging {
-  private var machine: StateMachine[SimpleState, Object, LeveledPriority.Value] = _
+  val builder = new DslStateMachineBuilder[SimpleState, Object, LeveledPriority.Value](NORMAL)
+  builder.state(A).isAStartState().always().goTo(B)
+  builder.state(B).always().goTo(C)
+  builder.state(C).always().goTo(D)
+  builder.state(D).always().goTo(E)
+  builder.state(E).isAnEndState()
 
-  machine = new DslStateMachineBuilder[SimpleState, Object, LeveledPriority.Value](NORMAL) {
-    @Override def executeBuildInstructions() {
-      state(A).isAStartState().whenConditions(always()).then(B)
-      state(B).whenConditions(always()).then(C)
-      state(C).whenConditions(always()).then(D)
-      state(D).whenConditions(always()).then(E)
-      state(E).isAnEndState()
-    }
-  }.build(new StateMachine[SimpleState, Object, LeveledPriority.Value]())
+  val machine = builder.build()
+
   trace("\n" + new DotOutput[SimpleState, Object, LeveledPriority.Value]().getOutput(machine))
 
   "an automatically firing transition" should "fire automatically" in {

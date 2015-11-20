@@ -76,6 +76,12 @@ class Transition[T, E, P <: Ordered[P]](val sourceState: T, val destinationState
  * change the user code state.
  * </ul>
  *
+ * @param startStates the states that are active at startup, or after a reset()
+ * @param endStates a state that can be reached, but is never added to the active states. The machine is finished when no states are active, which can be achieved by having the active states transition to an end state.
+ * @param exitEvents triggered when a specific state is exited
+ * @param entryEvents triggered when a specific state is entered
+ * @param transitions all the transitions, structured as "starting from this event, a sequence of possible transitions in order of priority"
+ *
  * @tparam T
  * State type. Each state should have a single instance of this type.
  * An enum is a good fit.
@@ -86,15 +92,18 @@ class Transition[T, E, P <: Ordered[P]](val sourceState: T, val destinationState
  * Priority type. Will be used to give priorities to transitions.
  * Enums and Integers are useful here.
  */
-class StateMachine[T, E, P <: Ordered[P]] extends Logging {
-  private val startStates = mutable.HashSet[T]()
-  private val endStates = mutable.HashSet[T]()
+class StateMachine[T, E, P <: Ordered[P]]
+(val startStates: Set[T],
+ val endStates: Set[T],
+ val exitEvents: Map[T, Seq[() => Unit]],
+ val entryEvents: Map[T, Seq[() => Unit]],
+ val transitions: Map[T, Seq[Transition[T, E, P]]]) extends Logging {
+
+  // TODO change to immutable
   val activeStates = mutable.HashSet[T]()
-  private val exitEvents = mutable.HashMap[T, Seq[() => Unit]]()
-  private val entryEvents = mutable.HashMap[T, Seq[() => Unit]]()
-  private val transitions = mutable.HashMap[T, mutable.PriorityQueue[Transition[T, E, P]]]()
 
   debug("New Machine")
+  reset()
 
   /**
    * Resets all active states to the start states.
@@ -202,7 +211,7 @@ class StateMachine[T, E, P <: Ordered[P]] extends Logging {
         exitState(stateToExit)
       }
       for (transitionToFire: Transition[T, E, P] <- transitionsToFire) {
-        transitionToFire.actions.foreach(_ ())
+        transitionToFire.actions.foreach(_())
         transitionsThatHaveFiredBefore.add(transitionToFire)
         stillNewTransitionsFiring = true
       }
@@ -248,90 +257,4 @@ class StateMachine[T, E, P <: Ordered[P]] extends Logging {
   private def executeEntryActions(state: T) {
     entryEvents.get(state).foreach(_.foreach(_ ()))
   }
-
-  /**
-   * Gives access to the internals of the state machine.
-   */
-  class Internals {
-    /**
-     * @return the end states.
-     */
-    def endStates: Set[T] = Set() ++ StateMachine.this.endStates
-
-    /**
-     * @return the start states.
-     */
-    def startStates: Set[T] = Set() ++ StateMachine.this.startStates
-
-    /**
-     * @return the states that have outgoing transitions defined.
-     */
-    def sourceStates: Set[T] = Set() ++ StateMachine.this.transitions.keySet
-
-    /**
-     * @return the outgoing transitions for a source state.
-     */
-    def transitionsForSourceState(sourceState: T) = StateMachine.this.transitions(sourceState)
-
-    // TODO complete meta information
-    /**
-     * Add 0 or more actions to be executed when the state is exited.
-     */
-    def addExitActions(state: T, actions: Seq[() => Unit]) {
-      debug(s"Create exit action for '$state' ($actions)")
-      // TODO there's probably a better way to express this
-      if (!stateMachine.exitEvents.contains(state)) {
-        stateMachine.exitEvents.put(state, actions)
-        return
-      }
-      stateMachine.exitEvents(state) ++= actions
-    }
-
-    /**
-     * Add 0 or more actions to be executed when the state is entered.
-     */
-    def addEntryActions(state: T, actions: Seq[() => Unit]) {
-      debug(s"Create entry action for '$state' ($actions)")
-      if (!stateMachine.entryEvents.contains(state)) {
-        stateMachine.entryEvents.put(state, actions)
-        return
-      }
-      stateMachine.entryEvents(state) ++= actions
-    }
-
-    /**
-     * Add an end state.
-     */
-    def addEndState(endState: T) {
-      debug(s"Add end state '$endState'")
-      stateMachine.endStates.add(endState)
-    }
-
-    /**
-     * Add a transition.
-     */
-    def addTransition(transition: Transition[T, E, P]) {
-      val sourceState = transition.sourceState
-      debug(s"Create transition from '$sourceState' to '${transition.destinationState}' (pre: '${transition.conditions}', action: '${transition.actions}')")
-      if (!transitions.contains(sourceState)) {
-        transitions.put(sourceState, mutable.PriorityQueue[Transition[T, E, P]]())
-      }
-      transitions(sourceState) += transition
-    }
-
-    /**
-     * Adds a start state, and immediately activates it.
-     */
-    def addStartState(startState: T) {
-      debug(s"Add start state '$startState'")
-      stateMachine.startStates.add(startState)
-      stateMachine.activeStates.add(startState)
-    }
-
-    /**
-     * @return the statemachine whose internals these are.
-     */
-    def stateMachine: StateMachine[T, E, P] = StateMachine.this
-  }
-
 }

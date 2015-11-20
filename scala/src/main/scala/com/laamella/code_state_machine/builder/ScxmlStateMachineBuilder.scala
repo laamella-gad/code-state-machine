@@ -63,20 +63,18 @@ abstract class ScxmlStateMachineBuilder[T, E](inputSource: InputSource) extends 
 
   private val documentBuilderFactory = DocumentBuilderFactory.newInstance()
 
-  override def build(machine: StateMachine[T, E, AutomaticPriority]): StateMachine[T, E, AutomaticPriority] = {
+  def build(machine: StateMachine[T, E, AutomaticPriority]): StateMachine[T, E, AutomaticPriority] = {
     val documentBuilder = documentBuilderFactory.newDocumentBuilder()
     val root = documentBuilder.parse(inputSource).getChildNodes.item(0).asInstanceOf[Element]
 
-    parseState(root, new machine.Internals())
+    parseState(root)
     machine
   }
 
-  override def build(): StateMachine[T, E, AutomaticPriority] = build(new StateMachine[T, E, AutomaticPriority]())
-
-  private def parseState(stateElement: Element, builder: StateMachine[T, E, AutomaticPriority]#Internals): T = {
+  private def parseState(stateElement: Element): T = {
     if (stateElement.hasAttribute(INITIAL_ATTRIBUTE)) {
       val initialState = interpretStateName(stateElement.getAttribute(INITIAL_ATTRIBUTE))
-      builder.addStartState(initialState)
+      addStartState(initialState)
     }
     val stateName = stateElement.getAttribute(ID_ATTRIBUTE)
     val state = interpretStateName(stateName)
@@ -89,9 +87,9 @@ abstract class ScxmlStateMachineBuilder[T, E](inputSource: InputSource) extends 
         val subNodeName = subElement.getNodeName
         if (subNodeName.equals(STATE_ELEMENT) || subNodeName.equals(STATE_ELEMENT)
           || subNodeName.equals(PARALLEL_ELEMENT) || subNodeName.equals(ROOT_STATE_MACHINE_ELEMENT)) {
-          parseState(subElement, builder)
+          parseState(subElement)
         } else if (subNodeName.equals(FINAL_STATE_ELEMENT)) {
-          builder.addEndState(parseState(subElement, builder))
+          addEndState(parseState(subElement))
         } else if (subNodeName.equals(TRANSITION_ELEMENT)) {
           if (subElement.hasAttribute(TARGET_ATTRIBUTE)) {
             val targetState = interpretStateName(subElement.getAttribute(TARGET_ATTRIBUTE))
@@ -107,14 +105,14 @@ abstract class ScxmlStateMachineBuilder[T, E](inputSource: InputSource) extends 
             }
 
             // TODO do something about priorities
-            builder.addTransition(new Transition[T, E, AutomaticPriority](state, targetState, conditions, new AutomaticPriority, actions))
+            addTransition(new Transition[T, E, AutomaticPriority](state, targetState, conditions, new AutomaticPriority, actions))
           } else {
             warn("State " + stateName + " has a transition going nowhere.")
           }
         } else if (subNodeName.equals("onentry")) {
-          builder.addEntryActions(state, Seq(interpretEvent(subNode.getTextContent)))
+          addEntryActions(state, Seq(interpretEvent(subNode.getTextContent)))
         } else if (subNodeName.equals("onexit")) {
-          builder.addExitActions(state, Seq(interpretEvent(subNode.getTextContent)))
+          addExitActions(state, Seq(interpretEvent(subNode.getTextContent)))
         }
       }
     }

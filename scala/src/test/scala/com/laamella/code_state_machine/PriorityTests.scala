@@ -8,15 +8,12 @@ import org.scalatest.BeforeAndAfterEach
 class PriorityTests extends UnitSpec with BeforeAndAfterEach {
   private var trace: StringBuilder = _
 
-  private var machine: StateMachine[SimpleState, Object, Value] = _
+  var builder: DslStateMachineBuilder[SimpleState, Object, Value] = _
 
   override def beforeEach() {
-    machine = new DslStateMachineBuilder[SimpleState, Object, Value](NORMAL) {
-      override protected def executeBuildInstructions() = {
-        state(A).isAStartState()
-        state(B).isAnEndState()
-      }
-    }.build()
+    builder = new DslStateMachineBuilder[SimpleState, Object, Value](NORMAL)
+    builder.state(A).isAStartState()
+    builder.state(B).isAnEndState()
 
     trace = new StringBuilder()
   }
@@ -28,41 +25,33 @@ class PriorityTests extends UnitSpec with BeforeAndAfterEach {
   behavior of "transitions with priorities"
 
   they should "only fire when they have the highest priority" in {
-    new DslStateMachineBuilder[SimpleState, Object, Value](NORMAL) {
-      override protected def executeBuildInstructions() = {
-        state(A).whenConditions(always()).transition(B, always(), HIGH, trace("H"))
-        state(A).whenConditions(always()).transition(B, always(), NORMAL, trace("N"))
-        state(A).whenConditions(always()).transition(B, always(), LOWEST, trace("L"))
-      }
-    }.build(machine)
+    builder.state(A).always().withPrio(HIGH).doing(trace("H")).goTo(B)
+    builder.state(A).always().withPrio(NORMAL).doing(trace("N")).goTo(B)
+    builder.state(A).always().withPrio(LOWEST).doing(trace("L")).goTo(B)
+    val machine = builder.build()
 
     machine.poll()
+
     assert("H" == trace.toString)
   }
 
   they should "only fire when their condition is met, even though higher priority transactions exist" in {
-    new DslStateMachineBuilder[SimpleState, Object, Value](NORMAL) {
-      @Override
-      protected def executeBuildInstructions() {
-        state(A).whenConditions(always()).transition(B, never(), HIGH, trace("H"))
-        state(A).whenConditions(always()).transition(B, never(), NORMAL, trace("N"))
-        state(A).whenConditions(always()).transition(B, always(), NORMAL, trace("N"))
-        state(A).whenConditions(always()).transition(B, always(), NORMAL, trace("N"))
-      }
-    }.build(machine)
+    builder.state(A).never().withPrio(HIGH).doing(trace("H")).goTo(B)
+    builder.state(A).never().withPrio(NORMAL).doing(trace("N")).goTo(B)
+    builder.state(A).always().withPrio(NORMAL).doing(trace("N")).goTo(B)
+    builder.state(A).always().withPrio(NORMAL).doing(trace("N")).goTo(B)
+    val machine = builder.build()
 
     machine.poll()
+
     assert("NN" == trace.toString)
   }
 
   they should "fire together when they have the same priority" in {
-    new DslStateMachineBuilder[SimpleState, Object, Value](NORMAL) {
-      override protected def executeBuildInstructions() {
-        state(A).whenConditions(always()).transition(B, always(), HIGH, trace("H"))
-        state(A).whenConditions(always()).transition(B, always(), HIGH, trace("H"))
-        state(A).whenConditions(always()).transition(B, always(), LOWEST, trace("L"))
-      }
-    }.build(machine)
+    builder.state(A).always().doing(trace("H")).withPrio(HIGH).goTo(B)
+    builder.state(A).always().doing(trace("H")).withPrio(HIGH).goTo(B)
+    builder.state(A).always().doing(trace("L")).withPrio(LOWEST).goTo(B)
+    val machine = builder.build()
 
     machine.poll()
     assert("HH" == trace.toString)

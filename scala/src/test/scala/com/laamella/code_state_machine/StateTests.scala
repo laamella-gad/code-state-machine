@@ -11,31 +11,29 @@ import org.scalatest.Assertions._
 import org.scalatest.BeforeAndAfterEach
 
 class StateTests extends UnitSpec with BeforeAndAfterEach with Logging {
-  private var gameMachine: StateMachine[GameState, GameEvent, LeveledPriority.Value] = _
+  var gameMachine: StateMachine[GameState, GameEvent, LeveledPriority.Value] = _
 
   override def beforeEach() {
-    val gameMachineBuilder = new DslStateMachineBuilder[GameState, GameEvent, LeveledPriority.Value](NORMAL) {
-      override def executeBuildInstructions() {
-        state(LOADER).onExit(log("exit!")).onEntry(log("enter!"))
+    val builder = new DslStateMachineBuilder[GameState, GameEvent, LeveledPriority.Value](NORMAL)
+    builder.state(LOADER).onExitLog("exit!").onEntryLog("enter!")
 
-        state(LOADER).isAStartState().whenEvents(DONE).action(log("bing!")).then(INTRO)
-        state(INTRO).whenEvents(DONE).then(MENU)
-        state(MENU).whenEvents(START).then(GET_READY).whenEvents(ESCAPE).then(EXIT)
-        state(GET_READY).whenEvents(DONE).then(LEVEL)
-        state(LEVEL_FINISH).whenEvents(DONE).then(GET_READY)
-        state(LEVEL).whenEvents(DEAD).then(GAME_OVER).whenEvents(COMPLETE).then(LEVEL_FINISH)
-        state(GAME_OVER).whenEvents(DONE).then(MENU)
-        states(LOADER, INTRO, MENU, CONFIGURATION, GET_READY, LEVEL, LEVEL_FINISH, GAME_OVER, EXIT).except(MENU, LOADER, EXIT).whenEvents(ESCAPE).then(MENU)
+    builder.state(LOADER).isAStartState().onEvents(DONE).log("bing!").goTo(INTRO)
+    builder.state(INTRO).onEvents(DONE).goTo(MENU)
+    builder.state(MENU).onEvents(START).goTo(GET_READY).onEvents(ESCAPE).goTo(EXIT)
+    builder.state(GET_READY).onEvents(DONE).goTo(LEVEL)
+    builder.state(LEVEL_FINISH).onEvents(DONE).goTo(GET_READY)
+    builder.state(LEVEL).onEvents(DEAD).goTo(GAME_OVER).onEvents(COMPLETE).goTo(LEVEL_FINISH)
+    builder.state(GAME_OVER).onEvents(DONE).goTo(MENU)
+    builder.states(LOADER, INTRO, MENU, CONFIGURATION, GET_READY, LEVEL, LEVEL_FINISH, GAME_OVER, EXIT).except(MENU, LOADER, EXIT).onEvents(ESCAPE).goTo(MENU)
 
-        state(MENU).whenEvents(FIRE_A, FIRE_B).then(CONFIGURATION)
-        state(CONFIGURATION).whenEvents(FIRE_A, FIRE_B).then(MENU)
+    builder.state(MENU).onEvents(FIRE_A, FIRE_B).goTo(CONFIGURATION)
+    builder.state(CONFIGURATION).onEvents(FIRE_A, FIRE_B).goTo(MENU)
 
-        state(CONFIGURATION).whenEvents(FIRE_A).then(INTRO)
+    builder.state(CONFIGURATION).onEvents(FIRE_A).goTo(INTRO)
 
-        state(EXIT).isAnEndState()
-      }
-    }
-    gameMachine = gameMachineBuilder.build()
+    builder.state(EXIT).isAnEndState()
+
+    gameMachine = builder.build()
     trace("\n" + new DotOutput[GameState, GameEvent, LeveledPriority.Value]().getOutput(gameMachine))
   }
 
@@ -83,7 +81,7 @@ class StateTests extends UnitSpec with BeforeAndAfterEach with Logging {
   }
 
   it should "aaa" in {
-    val result: Boolean = List(true, false, true).foldLeft(true) (_ && _)
+    val result: Boolean = List(true, false, true).foldLeft(true)(_ && _)
     println(result)
   }
 }
