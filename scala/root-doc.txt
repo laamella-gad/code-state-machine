@@ -21,7 +21,7 @@ An implementation of the [[https://en.wikipedia.org/wiki/Finite-state_machine Fi
  - It has only one dependency: slf4j for logging, which can be configured to use any other logging framework.
  - The state type can be anything.
  - The event type can be anything.
- - The priority type can be anything as long as it's [[scala.math.Ordered]].
+ - The priority type can be anything as long as it's [[scala.math.Ordered Ordered]].
  - It has two, always accessible modes of usage: asking the state machine for the current state, or having the state machine trigger actions that change the user code state.
 
 === Usage
