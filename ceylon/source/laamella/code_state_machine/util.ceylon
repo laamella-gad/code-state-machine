@@ -17,7 +17,7 @@ shared class Chain<T>(T* values)
 	}
 
 	shared void remove(T item) {
-		items.removeElement(item);
+		items.remove(item);
 	}
 	
 	shared actual Iterator<T> iterator() => items.iterator();	
