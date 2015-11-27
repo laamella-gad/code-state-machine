@@ -1,23 +1,35 @@
-import ceylon.collection { MutableSet,
-	HashSet }
-"Interface that all builders should adhere to."
-shared interface StateMachineBuilder<State, Event, Priority> 
-		given State satisfies Object
-		given Event satisfies Object
-		given Priority satisfies Comparable<Priority>
-		{
-	"Return the passed machine, now filled with whatever the builder did, or return a new machine if none passed."
-	shared formal StateMachine<State, Event, Priority> build(StateMachine<State, Event, Priority>? newMachine) ;
+import ceylon.collection {
+	HashSet,
+	MutableSet
+}
+import ceylon.logging {
+	logger
+}
+
+import laamella.code_state_machine {
+	StatesActiveCondition,
+	AfterCondition,
+	Transition,
+	AlwaysCondition,
+	Actions,
+	Conditions,
+	StateMachine,
+	Action,
+	LogAction,
+	Condition,
+	NeverCondition,
+	StatesInactiveCondition,
+	EventMatchCondition
 }
 
 "A pretty \"DSL\" builder for a state machine."
-shared abstract class DslStateMachineBuilder<State, Event, Priority>(variable StateMachine<State, Event, Priority> machine,	Priority defaultPriority) satisfies StateMachineBuilder<State, Event, Priority> 
+shared abstract class DslStateMachineBuilder<State, Event, Priority>(variable StateMachine<State,Event,Priority> machine, Priority defaultPriority) satisfies StateMachineBuilder<State,Event,Priority>
 		given State satisfies Object
 		given Event satisfies Object
-		given Priority satisfies Comparable<Priority>{
-	value log = loggerFactory.getLogger(`DslStateMachineBuilder<State, Event, Priority>`);
+		given Priority satisfies Comparable<Priority> {
+	value log = logger(`package laamella.code_state_machine.builders`);
 	
-	shared class DefiningState(MutableSet<State> sourceStates, StateMachine<State, Event, Priority>.Internals internals) {
+	shared class DefiningState(MutableSet<State> sourceStates, StateMachine<State,Event,Priority>.Internals internals) {
 		shared DefiningState except(State+ states) {
 			for (state in states) {
 				sourceStates.remove(state);
@@ -62,12 +74,16 @@ shared abstract class DslStateMachineBuilder<State, Event, Priority>(variable St
 			return DefiningTransition(sourceStates, Conditions<Event>(*condition), internals);
 		}
 		
-		shared DefiningTransition when_(Event+ events) {
-			return DefiningTransition(sourceStates, _is(*events), internals);
+		shared DefiningTransition onEvents({Event+} events) {
+			return DefiningTransition(sourceStates, _is(events), internals);
+		}
+
+		shared DefiningTransition onEvent(Event event) {
+			return DefiningTransition(sourceStates, _is({event}), internals);
 		}
 	}
 	
-	shared class DefiningTransition(MutableSet<State> sourceStates, Conditions<Event> conditions, StateMachine<State, Event, Priority>.Internals internals) {
+	shared class DefiningTransition(MutableSet<State> sourceStates, Conditions<Event> conditions, StateMachine<State,Event,Priority>.Internals internals) {
 		Actions actions = Actions();
 		variable Priority priority = defaultPriority;
 		
@@ -81,11 +97,11 @@ shared abstract class DslStateMachineBuilder<State, Event, Priority>(variable St
 		}
 		
 		shared DefiningState transition(State destinationState, Conditions<Event> storedConditions2,
-		Priority priority, Actions actions) {
+			Priority priority, Actions actions) {
 			this.actions.add(*actions);
 			for (sourceState in sourceStates) {
-				internals.addTransition(Transition<State, Event, Priority>(sourceState, destinationState, storedConditions2,
-				priority, this.actions));
+				internals.addTransition(Transition<State,Event,Priority>(sourceState, destinationState, storedConditions2,
+						priority, this.actions));
 			}
 			return DefiningState(sourceStates, internals);
 		}
@@ -100,10 +116,10 @@ shared abstract class DslStateMachineBuilder<State, Event, Priority>(variable St
 		}
 	}
 	
-	shared actual StateMachine<State, Event, Priority> build(StateMachine<State, Event, Priority>? newMachine) {
-		if( exists newMachine) {
-			machine=newMachine;
-		} 
+	shared actual StateMachine<State,Event,Priority> build(StateMachine<State,Event,Priority>? newMachine) {
+		if (exists newMachine) {
+			machine = newMachine;
+		}
 		executeBuildInstructions();
 		return machine;
 	}
@@ -111,21 +127,20 @@ shared abstract class DslStateMachineBuilder<State, Event, Priority>(variable St
 	shared formal void executeBuildInstructions();
 	
 	shared DefiningState state(State state) {
-		return states(state);
+		return states({state});
 	}
 	
-	shared DefiningState states(State+ states) {
-		return DefiningState(HashSet<State>{elements = states;}, machine.Internals());
+	shared DefiningState states({State*} states) {
+		return DefiningState(HashSet<State> { elements = states; }, machine.Internals());
 	}
 	
-	shared Condition<Event> active(State+ statesThatMustBeActive) {
-		return StatesActiveCondition<State, Event, Priority>(machine, *statesThatMustBeActive);
+	shared Condition<Event> active({State+} statesThatMustBeActive) {
+		return StatesActiveCondition<State,Event,Priority>(machine, statesThatMustBeActive);
 	}
 	
-	shared Condition<Event> inactive(State+ statesThatMustBeInactive) {
-		return StatesInactiveCondition<State, Event, Priority>(machine, *statesThatMustBeInactive);
+	shared Condition<Event> inactive({State+} statesThatMustBeInactive) {
+		return StatesInactiveCondition<State,Event,Priority>(machine, statesThatMustBeInactive);
 	}
-	
 }
 
 shared Condition<Event> always<Event>() {
@@ -140,16 +155,10 @@ shared Condition<E> after<E>(Integer milliseconds) {
 	return AfterCondition<E>(milliseconds);
 }
 
-shared Conditions<Event> _is<Event> (Event+ events) given Event satisfies Object {
-	if (events.size == 1) {
-		value singleEvent = events[0];
-		return Conditions<Event>(SingleEventMatchCondition<Event>(singleEvent));
-	}
-	
-	return Conditions<Event>(MultiEventMatchCondition<Event>(*events));
+shared Conditions<Event> _is<Event>({Event+} events) given Event satisfies Object {
+	return Conditions<Event>(EventMatchCondition<Event>(events));
 }
 
 shared Action log(String logText) {
 	return LogAction(logText);
 }
-

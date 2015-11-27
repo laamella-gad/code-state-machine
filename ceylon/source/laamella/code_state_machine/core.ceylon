@@ -1,7 +1,11 @@
 import ceylon.collection {
 	HashSet,
 	HashMap,
-	MutableSet
+	MutableSet,
+	PriorityQueue
+}
+import ceylon.logging {
+	logger
 }
 
 "Any kind of user defined code that is executed when a certain event is received."
@@ -31,8 +35,8 @@ shared interface Condition<Event> {
 	shared formal Boolean met;
 	
 	"This method is called every time the sourceState for this transition is
-	    entered. It can be used to implement stateful transitions, like
-	    transitions that fire after a certain amount of time."
+	          entered. It can be used to implement stateful transitions, like
+	          transitions that fire after a certain amount of time."
 	shared formal void reset();
 }
 
@@ -122,7 +126,7 @@ shared class StateMachine<State, Event, Priority>()
 		given Priority satisfies Comparable<Priority>
 		given State satisfies Object
 		given Event satisfies Object {
-	value log = loggerFactory.getLogger(`StateMachine<State,Event,Priority>`);
+	value log = logger(`package laamella.code_state_machine`);
 	
 	value startStates = HashSet<State>();
 	value endStates = HashSet<State>();
@@ -130,7 +134,7 @@ shared class StateMachine<State, Event, Priority>()
 	shared MutableSet<State> activeStates = HashSet<State>();
 	value exitEvents = HashMap<State,Actions>();
 	value entryEvents = HashMap<State,Actions>();
-	value transitions = HashMap<State,Queue<Transition<State,Event,Priority>>>();
+	value transitions = HashMap<State,PriorityQueue<Transition<State,Event,Priority>>>();
 	
 	log.debug("New Machine");
 	
@@ -153,13 +157,13 @@ shared class StateMachine<State, Event, Priority>()
 	shared Boolean active(State state) => activeStates.contains(state);
 	
 	"Returns whether no states are active. Can be caused by all active states
-	    having disappeared into end states, or by having no start states
-	    at all."
+	          having disappeared into end states, or by having no start states
+	          at all."
 	shared Boolean finished => activeStates.empty;
 	
 	"Handle an event coming from the user application. After sending the event
-	    to all transitions that have an active source state, poll() will be
-	    called."
+	          to all transitions that have an active source state, poll() will be
+	          called."
 	shared void handleEvent(Event event) {
 		log.debug("handle event ``event``");
 		
@@ -172,25 +176,25 @@ shared class StateMachine<State, Event, Priority>()
 	}
 	
 	"
-	    Tells the state machine to look for state changes to execute. This method
-	    has to be called regularly, or the state machine will do nothing at all.
-	
-	    * Repeat...
-	        1. For all transitions that have an active source state, find the
-	    		transitions that will fire.
-	            * Ignore transitions that have already fired in this poll().
-	            * For a single source state, find the transition of the highest
-	    			priority which will fire (if any fire at all.) If multiple transitions
-	    			share this priority, fire them all.
-	        2. For all states that will be exited, fire the exit state event.
-	        3. For all transitions that fire, fire the transition action.
-	        4. For all states that will be entered, fire the entry state event.
-	    * ... until no new transitions have fired.
-	
-	    	 This method prevents itself from looping endlessly on a loop in the state
-	    machine by only considering transitions that have not fired before in
-	    this poll.
-	    "
+	          Tells the state machine to look for state changes to execute. This method
+	          has to be called regularly, or the state machine will do nothing at all.
+	      
+	          * Repeat...
+	              1. For all transitions that have an active source state, find the
+	          		transitions that will fire.
+	                  * Ignore transitions that have already fired in this poll().
+	                  * For a single source state, find the transition of the highest
+	          			priority which will fire (if any fire at all.) If multiple transitions
+	          			share this priority, fire them all.
+	              2. For all states that will be exited, fire the exit state event.
+	              3. For all transitions that fire, fire the transition action.
+	              4. For all states that will be entered, fire the entry state event.
+	          * ... until no new transitions have fired.
+	      
+	          	 This method prevents itself from looping endlessly on a loop in the state
+	          machine by only considering transitions that have not fired before in
+	          this poll.
+	          "
 	shared void poll() {
 		variable value stillNewTransitionsFiring = true;
 		value transitionsThatHaveFiredBefore = HashSet<Transition<State,Event,Priority>>();
@@ -208,7 +212,7 @@ shared class StateMachine<State, Event, Priority>()
 						if (exists priority = firingPriority) {
 							if (!transition.priority.equals(priority)) {
 								/* We reached a lower prio while higher prio transitions are firing.
-														 Don't consider these anymore, go to the next source state. */
+																										 Don't consider these anymore, go to the next source state. */
 								break;
 							}
 						}
@@ -271,9 +275,13 @@ shared class StateMachine<State, Event, Priority>()
 		}
 	}
 	
-	Queue<Transition<State,Event,Priority>> findTransitionsForState(State sourceState) {
-		return transitions.get(sourceState) else Queue<Transition<State,Event,Priority>>();
+	PriorityQueue<Transition<State,Event,Priority>> findTransitionsForState(State sourceState) {
+		return transitions.get(sourceState) else newQueue();
 	}
+	
+	PriorityQueue<Transition<State,Event,Priority>> newQueue() => PriorityQueue<Transition<State,Event,Priority>> {
+		compare = (Transition<State,Event,Priority> first, Transition<State,Event,Priority> second) => first.compare(second);
+	};
 	
 	void executeExitActions(State state) => executeActions(exitEvents.get(state) else noActions);
 	
@@ -291,7 +299,7 @@ shared class StateMachine<State, Event, Priority>()
 		shared Collection<State> sourceStates => outer.transitions.keys;
 		
 		"Returns the outgoing transitions for a source state."
-		shared Queue<Transition<State,Event,Priority>> transitionsForSourceState(State sourceState) => outer.findTransitionsForState(sourceState);
+		shared PriorityQueue<Transition<State,Event,Priority>> transitionsForSourceState(State sourceState) => outer.findTransitionsForState(sourceState);
 		
 		// TODO complete meta information
 		
@@ -326,9 +334,9 @@ shared class StateMachine<State, Event, Priority>()
 			value sourceState = transition.sourceState;
 			log.debug("Create transition from '``sourceState``' to '``transition.destinationState``' (pre: '``transition.conditions``', action: '``transition.actions``')");
 			if (!transitions.defines(sourceState)) {
-				transitions.put(sourceState, Queue<Transition<State,Event,Priority>>());
+				transitions.put(sourceState, newQueue());
 			}
-			transitions.get(sourceState)?.add(transition);
+			transitions.get(sourceState)?.offer(transition);
 		}
 		
 		"Adds a start state, and immediately activates it."

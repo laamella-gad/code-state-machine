@@ -1,0 +1,21 @@
+group 'laamella'
+version '1.0'
+
+buildscript {
+    repositories {
+        jcenter()
+        mavenLocal()
+    	mavenCentral()
+    }
+
+    dependencies {
+        classpath "com.athaydes.gradle.ceylon:ceylon-gradle-plugin:1.0"
+    }
+}
+
+apply plugin: 'com.athaydes.ceylon'
+
+ceylon {
+	module = "laamella.code_state_machine"
+	flatClassPath = true
+}

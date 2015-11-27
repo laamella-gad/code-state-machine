@@ -9,7 +9,7 @@ import scala.collection.mutable
   *
   * Event is the event type.
   */
-trait Condition[Event] {
+trait Condition[State, Event] {
   /**
     * Handle an event.
     *
@@ -18,9 +18,9 @@ trait Condition[Event] {
   def handleEvent(event: Event): Unit
 
   /**
-    * Return whether the condition is met.
+    * Decide and return whether the condition is met.
     */
-  def isMet: Boolean
+  def evaluate(activeStates: Set[State]): Boolean
 
   /**
     * This method is called every time the sourceState for this transition is
@@ -156,7 +156,7 @@ class StateMachine[State, Event, Priority <: Ordered[Priority]](
             // This takes advantage of the transitions being in order of priority.
             if (firingPriority.isEmpty || firingPriority.contains(transition.priority)) {
               // Only fire if all conditions are met.
-              if (transition.conditions.forall(_.isMet)) {
+              if (transition.conditions.forall(_.evaluate)) {
                 statesToExit += sourceState
                 transitionsToFire += transition
                 statesToEnter += transition.destinationState
