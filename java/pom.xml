@@ -3,7 +3,7 @@
 
 	<groupId>com.laamella</groupId>
 	<artifactId>code-state-machine</artifactId>
-	<version>1.0</version>
+	<version>1.1-SNAPSHOT</version>
 
 	<name>${project.groupId}:${project.artifactId}</name>
 	<description>State machine that is meant to be used directly from code.</description>
@@ -98,7 +98,7 @@
 		<connection>scm:git:git@github.com:laamella-gad/code-state-machine.git</connection>
 		<developerConnection>scm:git:git@github.com:laamella-gad/code-state-machine.git</developerConnection>
 		<url>https://github.com/laamella-gad/code-state-machine.git</url>
-	  <tag>code-state-machine-1.0</tag>
+	  <tag>HEAD</tag>
   </scm>
 
 	<licenses>
