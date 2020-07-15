@@ -34,7 +34,7 @@ public class StateTests {
 
 	@Before
 	public void before() {
-		final DslStateMachineBuilder<GameState, GameEvent, Priority> gameMachineBuilder = new DslStateMachineBuilder<GameState, GameEvent, Priority>(
+		final DslStateMachineBuilder<GameState, GameEvent, Priority> gameMachineBuilder = new DslStateMachineBuilder<>(
 				Priority.NORMAL) {
 			@Override
 			protected void executeBuildInstructions() {

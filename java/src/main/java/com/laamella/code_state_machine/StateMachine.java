@@ -55,12 +55,12 @@ import org.slf4j.LoggerFactory;
 public class StateMachine<T, E, P extends Comparable<P>> {
 	private static final Logger log = LoggerFactory.getLogger(StateMachine.class);
 
-	private final Set<T> startStates = new HashSet<T>();
-	private final Set<T> endStates = new HashSet<T>();
-	private final Set<T> activeStates = new HashSet<T>();
-	private final Map<T, Actions> exitEvents = new HashMap<T, Actions>();
-	private final Map<T, Actions> entryEvents = new HashMap<T, Actions>();
-	private final Map<T, Queue<Transition<T, E, P>>> transitions = new HashMap<T, Queue<Transition<T, E, P>>>();
+	private final Set<T> startStates = new HashSet<>();
+	private final Set<T> endStates = new HashSet<>();
+	private final Set<T> activeStates = new HashSet<>();
+	private final Map<T, Actions> exitEvents = new HashMap<>();
+	private final Map<T, Actions> entryEvents = new HashMap<>();
+	private final Map<T, Queue<Transition<T, E, P>>> transitions = new HashMap<>();
 
 	/**
 	 * Create a new, empty state machine. To fill it, use the internals, or use
@@ -92,7 +92,6 @@ public class StateMachine<T, E, P extends Comparable<P>> {
 	}
 
 	/**
-	 * @param state
 	 * @return whether the state is currently active.
 	 */
 	public boolean isActive(final T state) {
@@ -153,14 +152,14 @@ public class StateMachine<T, E, P extends Comparable<P>> {
 	 * this poll.
 	 */
 	public void poll() {
-		boolean stillNewTransitionsFiring = true;
-		final Set<Transition<T, E, P>> transitionsThatHaveFiredBefore = new HashSet<Transition<T, E, P>>();
+		boolean stillNewTransitionsFiring;
+		final Set<Transition<T, E, P>> transitionsThatHaveFiredBefore = new HashSet<>();
 
 		do {
 			stillNewTransitionsFiring = false;
-			final Set<T> statesToExit = new HashSet<T>();
-			final Set<Transition<T, E, P>> transitionsToFire = new HashSet<Transition<T, E, P>>();
-			final Set<T> statesToEnter = new HashSet<T>();
+			final Set<T> statesToExit = new HashSet<>();
+			final Set<Transition<T, E, P>> transitionsToFire = new HashSet<>();
+			final Set<T> statesToEnter = new HashSet<>();
 
 			for (final T sourceState : activeStates) {
 				P firingPriority = null;
@@ -252,21 +251,21 @@ public class StateMachine<T, E, P extends Comparable<P>> {
 		 * @return the end states.
 		 */
 		public Set<T> getEndStates() {
-			return new HashSet<T>(StateMachine.this.endStates);
+			return new HashSet<>(StateMachine.this.endStates);
 		}
 
 		/**
 		 * @return the start states.
 		 */
 		public Set<T> getStartStates() {
-			return new HashSet<T>(StateMachine.this.startStates);
+			return new HashSet<>(StateMachine.this.startStates);
 		}
 
 		/**
 		 * @return the states that have outgoing transitions defined.
 		 */
 		public Set<T> getSourceStates() {
-			return new HashSet<T>(StateMachine.this.transitions.keySet());
+			return new HashSet<>(StateMachine.this.transitions.keySet());
 		}
 
 		/**
@@ -315,10 +314,10 @@ public class StateMachine<T, E, P extends Comparable<P>> {
 		 */
 		public void addTransition(final Transition<T, E, P> transition) {
 			final T sourceState = transition.getSourceState();
-			log.debug("Create transition from '{}' to '{}' (pre: '{}', action: '{}')", new Object[] { sourceState,
-					transition.getDestinationState(), transition.getCondition(), transition.getActions() });
+			log.debug("Create transition from '{}' to '{}' (pre: '{}', action: '{}')", sourceState,
+					transition.getDestinationState(), transition.getCondition(), transition.getActions());
 			if (!transitions.containsKey(sourceState)) {
-				transitions.put(sourceState, new PriorityQueue<Transition<T, E, P>>());
+				transitions.put(sourceState, new PriorityQueue<>());
 			}
 			transitions.get(sourceState).add(transition);
 		}

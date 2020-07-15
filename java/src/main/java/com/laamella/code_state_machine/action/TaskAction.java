@@ -20,7 +20,7 @@ public abstract class TaskAction<E> implements Runnable, FinishableAction<E> {
 	@Override
 	public final void execute() {
 		taskThread = new Thread(this);
-		finishedCondition = new NonEventBasedCondition<E>() {
+		finishedCondition = new NonEventBasedCondition<>() {
 			@Override
 			public boolean isMet() {
 				return taskThread.getState() == State.TERMINATED;

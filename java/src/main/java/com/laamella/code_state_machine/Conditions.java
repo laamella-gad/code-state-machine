@@ -11,13 +11,9 @@ public class Conditions<E> extends Chain<Condition<E>> {
 		super();
 	}
 
+	@SafeVarargs
 	public Conditions(final Condition<E>... conditions) {
 		super(conditions);
-	}
-
-	// This method exists only to suppress warnings about varargs.
-	public Conditions(final Condition<E> condition) {
-		super(condition);
 	}
 
 	public void handleEvent(final E event) {

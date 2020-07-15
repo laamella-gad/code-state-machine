@@ -9,6 +9,7 @@ public final class StatesInactiveCondition<T, E, P extends Comparable<P>> extend
 	private final T[] statesThatMustBeInactive;
 	private final StateMachine<T, E, P> stateMachine;
 
+	@SafeVarargs
 	public StatesInactiveCondition(final StateMachine<T, E, P> stateMachine, final T... statesThatMustBeInactive) {
 		this.stateMachine = stateMachine;
 		this.statesThatMustBeInactive = statesThatMustBeInactive;

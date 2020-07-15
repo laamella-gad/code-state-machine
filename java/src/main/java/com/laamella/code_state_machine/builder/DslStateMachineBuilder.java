@@ -29,7 +29,7 @@ public abstract class DslStateMachineBuilder<T, E, P extends Comparable<P>> impl
 	private static final Logger log = LoggerFactory.getLogger(DslStateMachineBuilder.class);
 
 	public class DefiningState {
-		private Set<T> sourceStates = new HashSet<T>();
+		private final Set<T> sourceStates;
 		private final StateMachine<T, E, P>.Internals internals;
 
 		public DefiningState(final Set<T> sourceStates, final StateMachine<T, E, P>.Internals internals) {
@@ -37,7 +37,8 @@ public abstract class DslStateMachineBuilder<T, E, P extends Comparable<P>> impl
 			this.internals = internals;
 		}
 
-		public DefiningState except(final T... states) {
+		@SafeVarargs
+		public final DefiningState except(final T... states) {
 			for (final T state : states) {
 				sourceStates.remove(state);
 			}
@@ -81,18 +82,20 @@ public abstract class DslStateMachineBuilder<T, E, P extends Comparable<P>> impl
 			return isAStartState();
 		}
 
-		public DefiningTransition when(final Condition<E>... condition) {
+		@SafeVarargs
+		public final DefiningTransition when(final Condition<E>... condition) {
 			assert condition != null;
-			return new DefiningTransition(sourceStates, new Conditions<E>(condition), internals);
+			return new DefiningTransition(sourceStates, new Conditions<>(condition), internals);
 		}
 
 		// This method exists only to suppress warnings about varargs.
 		public DefiningTransition when(final Condition<E> condition) {
 			assert condition != null;
-			return new DefiningTransition(sourceStates, new Conditions<E>(condition), internals);
+			return new DefiningTransition(sourceStates, new Conditions<>(condition), internals);
 		}
 
-		public DefiningTransition when(final E... events) {
+		@SafeVarargs
+		public final DefiningTransition when(final E... events) {
 			return new DefiningTransition(sourceStates, is(events), internals);
 		}
 
@@ -127,7 +130,7 @@ public abstract class DslStateMachineBuilder<T, E, P extends Comparable<P>> impl
 				final P priority, final Actions actions) {
 			this.actions.add(actions);
 			for (final T sourceState : sourceStates) {
-				internals.addTransition(new Transition<T, E, P>(sourceState, destinationState, storedConditions2,
+				internals.addTransition(new Transition<>(sourceState, destinationState, storedConditions2,
 						priority, this.actions));
 			}
 			return new DefiningState(sourceStates, internals);
@@ -135,7 +138,7 @@ public abstract class DslStateMachineBuilder<T, E, P extends Comparable<P>> impl
 
 		public DefiningState transition(final T destinationState, final Condition<E> condition, final P priority,
 				final Action... actions) {
-			return transition(destinationState, new Conditions<E>(condition), priority, new Actions(actions));
+			return transition(destinationState, new Conditions<>(condition), priority, new Actions(actions));
 		}
 
 		public DefiningTransition withPrio(final P priority) {
@@ -165,49 +168,52 @@ public abstract class DslStateMachineBuilder<T, E, P extends Comparable<P>> impl
 
 	@Override
 	public StateMachine<T, E, P> build() {
-		return build(new StateMachine<T, E, P>());
+		return build(new StateMachine<>());
 	}
 
-	@SuppressWarnings("unchecked")
 	public DefiningState state(final T state) {
 		assert state != null;
 		return states(state);
 	}
 
-	public DefiningState states(final T... states) {
-		return new DefiningState(new HashSet<T>(Arrays.asList(states)), machine.new Internals());
+	@SafeVarargs
+	public final DefiningState states(final T... states) {
+		return new DefiningState(new HashSet<>(Arrays.asList(states)), machine.new Internals());
 	}
 
 	public static <E> Condition<E> always() {
-		return new AlwaysCondition<E>();
+		return new AlwaysCondition<>();
 	}
 
 	public static <E> Condition<E> never() {
-		return new NeverCondition<E>();
+		return new NeverCondition<>();
 	}
 
 	public static <E> Condition<E> after(final long milliseconds) {
-		return new AfterCondition<E>(milliseconds);
+		return new AfterCondition<>(milliseconds);
 	}
 
+	@SafeVarargs
 	public static <E> Conditions<E> is(final E... events) {
 		assert events != null;
 		assert events.length != 0;
 
 		if (events.length == 1) {
 			final E singleEvent = events[0];
-			return new Conditions<E>(new SingleEventMatchCondition<E>(singleEvent));
+			return new Conditions<>(new SingleEventMatchCondition<>(singleEvent));
 		}
 
-		return new Conditions<E>(new MultiEventMatchCondition<E>(events));
+		return new Conditions<>(new MultiEventMatchCondition<>(events));
 	}
 
-	public Condition<E> active(final T... statesThatMustBeActive) {
-		return new StatesActiveCondition<T, E, P>(machine, statesThatMustBeActive);
+	@SafeVarargs
+	public final Condition<E> active(final T... statesThatMustBeActive) {
+		return new StatesActiveCondition<>(machine, statesThatMustBeActive);
 	}
 
-	public Condition<E> inactive(final T... statesThatMustBeInactive) {
-		return new StatesInactiveCondition<T, E, P>(machine, statesThatMustBeInactive);
+	@SafeVarargs
+	public final Condition<E> inactive(final T... statesThatMustBeInactive) {
+		return new StatesInactiveCondition<>(machine, statesThatMustBeInactive);
 	}
 
 	public static Action log(final String logText) {

@@ -12,6 +12,7 @@ public final class StatesActiveCondition<T, E, P extends Comparable<P>> extends 
 	private final HashSet<T> statesThatMustBeActive;
 	private final StateMachine<T, E, P> stateMachine;
 
+	@SafeVarargs
 	public StatesActiveCondition(final StateMachine<T, E, P> stateMachine, final T... statesThatMustBeActive) {
 		this.stateMachine = stateMachine;
 		this.statesThatMustBeActive = new HashSet<T>(Arrays.asList(statesThatMustBeActive));

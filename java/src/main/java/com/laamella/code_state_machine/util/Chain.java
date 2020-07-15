@@ -12,18 +12,12 @@ public class Chain<T> {
 
 	// This method exists only to suppress warnings about varargs.
 	public Chain() {
-		this.items = new ArrayList<T>();
+		this.items = new ArrayList<>();
 	}
 
+	@SafeVarargs
 	public Chain(final T... items) {
-		this.items = new ArrayList<T>(Arrays.asList(items));
-	}
-
-	// This method exists only to suppress warnings about varargs.
-	public Chain(final T item) {
-		assert item != null;
-		this.items = new ArrayList<T>();
-		items.add(item);
+		this.items = new ArrayList<>(Arrays.asList(items));
 	}
 
 	public void add(final T additionalItem) {
@@ -31,7 +25,8 @@ public class Chain<T> {
 		items.add(additionalItem);
 	}
 
-	public void add(final T... additionalItems) {
+	@SafeVarargs
+	public final void add(final T... additionalItems) {
 		items.addAll(Arrays.asList(additionalItems));
 	}
 
@@ -56,7 +51,7 @@ public class Chain<T> {
 		if (items.size() == 1) {
 			return items.get(0).toString();
 		}
-		final StringBuffer buffer = new StringBuffer("[");
+		final StringBuilder buffer = new StringBuilder("[");
 		for (final T item : items) {
 			buffer.append(item.toString());
 			buffer.append(", ");

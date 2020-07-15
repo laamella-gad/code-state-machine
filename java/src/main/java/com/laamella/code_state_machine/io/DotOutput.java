@@ -18,22 +18,22 @@ public class DotOutput<T, E, P extends Comparable<P>> {
 		if (!internals.getStartStates().isEmpty()) {
 			output.append("\tnode [shape = doublecircle, style=solid];");
 			for (final T startState : internals.getStartStates()) {
-				output.append(" " + startState);
+				output.append(" ").append(startState);
 			}
 			output.append(";\n");
 		}
 		if (!internals.getEndStates().isEmpty()) {
 			output.append("\tnode [shape = circle, style=dotted];");
 			for (final T startState : internals.getEndStates()) {
-				output.append(" " + startState);
+				output.append(" ").append(startState);
 			}
 			output.append(";\n");
 		}
 		output.append("\tnode [shape = circle, style=solid];\n");
 		for (final T sourceState : internals.getSourceStates()) {
 			for (final Transition<T, E, P> transition : internals.getTransitionsForSourceState(sourceState)) {
-				output.append("\t" + sourceState + " -> " + transition.getDestinationState());
-				output.append(" [ label = \"" + transition.getCondition() + "\" ]");
+				output.append("\t").append(sourceState).append(" -> ").append(transition.getDestinationState());
+				output.append(" [ label = \"").append(transition.getCondition()).append("\" ]");
 				output.append(";\n");
 			}
 		}

@@ -1,22 +1,16 @@
 package com.laamella.code_state_machine;
 
-import static com.laamella.code_state_machine.StateMachineAssert.assertActive;
-import static com.laamella.code_state_machine.util.SimpleState.A;
-import static com.laamella.code_state_machine.util.SimpleState.B;
-import static com.laamella.code_state_machine.util.SimpleState.C;
-import static com.laamella.code_state_machine.util.SimpleState.D;
-import static com.laamella.code_state_machine.util.SimpleState.E;
-
+import com.laamella.code_state_machine.builder.DslStateMachineBuilder;
+import com.laamella.code_state_machine.io.DotOutput;
+import com.laamella.code_state_machine.priority.Priority;
+import com.laamella.code_state_machine.util.SimpleState;
 import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.laamella.code_state_machine.StateMachine;
-import com.laamella.code_state_machine.builder.DslStateMachineBuilder;
-import com.laamella.code_state_machine.io.DotOutput;
-import com.laamella.code_state_machine.priority.Priority;
-import com.laamella.code_state_machine.util.SimpleState;
+import static com.laamella.code_state_machine.StateMachineAssert.assertActive;
+import static com.laamella.code_state_machine.util.SimpleState.*;
 
 public class AutomaticFiringTests {
 	private static final Logger log = LoggerFactory.getLogger(AutomaticFiringTests.class);
@@ -34,7 +28,7 @@ public class AutomaticFiringTests {
 				state(D).when(always()).then(E);
 				state(E).isAnEndState();
 			}
-		}.build(new StateMachine<SimpleState, Object, Priority>());
+		}.build(new StateMachine<>());
 		log.trace("\n" + new DotOutput<SimpleState, Object, Priority>().getOutput(machine));
 	}
 

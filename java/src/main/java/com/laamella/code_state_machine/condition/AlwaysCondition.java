@@ -13,8 +13,4 @@ public final class AlwaysCondition<E> extends NonEventBasedCondition<E> {
 	public String toString() {
 		return "always";
 	}
-
-	@Override
-	public void reset() {
-	}
 }

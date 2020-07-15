@@ -63,9 +63,6 @@ public class Transition<T, E, P extends Comparable<P>> implements Comparable<Tra
 
 	/**
 	 * Compares transitions on their priorities.
-	 * 
-	 * @param o
-	 * @return
 	 */
 	@Override
 	public int compareTo(final Transition<T, E, P> o) {

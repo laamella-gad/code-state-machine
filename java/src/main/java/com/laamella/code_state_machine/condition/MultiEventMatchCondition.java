@@ -11,15 +11,16 @@ import java.util.Set;
 public final class MultiEventMatchCondition<E> extends EventBasedCondition<E> {
 	private final Set<E> matchEvents;
 
+	@SafeVarargs
 	public MultiEventMatchCondition(final E... events) {
-		matchEvents = new HashSet<E>(Arrays.asList(events));
+		matchEvents = new HashSet<>(Arrays.asList(events));
 	}
 
 	@Override
 	public String toString() {
 		final StringBuilder str = new StringBuilder("one of (");
 		for (final E matchEvent : matchEvents) {
-			str.append(matchEvent.toString() + " ");
+			str.append(matchEvent.toString()).append(" ");
 		}
 		return str.append(")").toString();
 	}

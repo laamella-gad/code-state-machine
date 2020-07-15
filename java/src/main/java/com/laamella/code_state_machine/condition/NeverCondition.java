@@ -5,17 +5,13 @@ package com.laamella.code_state_machine.condition;
  * firing. Probably only useful in test scenarios.
  */
 public final class NeverCondition<E> extends NonEventBasedCondition<E> {
-	@Override
-	public boolean isMet() {
-		return false;
-	}
+    @Override
+    public boolean isMet() {
+        return false;
+    }
 
-	@Override
-	public String toString() {
-		return "never";
-	}
-
-	@Override
-	public void reset() {
-	}
+    @Override
+    public String toString() {
+        return "never";
+    }
 }
