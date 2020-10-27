@@ -7,7 +7,7 @@ public final class AfterCondition<E> extends NonEventBasedCondition<E> {
 	private final long milliseconds;
 	private long minimalMeetTime;
 
-	public AfterCondition(final long milliseconds) {
+	public AfterCondition(long milliseconds) {
 		this.milliseconds = milliseconds;
 	}
 

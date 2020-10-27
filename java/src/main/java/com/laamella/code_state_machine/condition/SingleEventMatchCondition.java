@@ -5,19 +5,19 @@ package com.laamella.code_state_machine.condition;
  * constructor.
  */
 public final class SingleEventMatchCondition<E> extends EventBasedCondition<E> {
-	private final E singleEvent;
+    private final E singleEvent;
 
-	public SingleEventMatchCondition(final E singleEvent) {
-		this.singleEvent = singleEvent;
-	}
+    public SingleEventMatchCondition(E singleEvent) {
+        this.singleEvent = singleEvent;
+    }
 
-	@Override
-	public String toString() {
-		return "is " + singleEvent;
-	}
+    @Override
+    public String toString() {
+        return "is " + singleEvent;
+    }
 
-	@Override
-	protected boolean conditionIsMetAfterHandlingEvent(final E event) {
-		return singleEvent.equals(event);
-	}
+    @Override
+    protected boolean conditionIsMetAfterHandlingEvent(E event) {
+        return singleEvent.equals(event);
+    }
 }

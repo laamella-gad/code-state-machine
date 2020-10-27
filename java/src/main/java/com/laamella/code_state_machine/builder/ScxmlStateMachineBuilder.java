@@ -1,26 +1,17 @@
 package com.laamella.code_state_machine.builder;
 
-import java.io.IOException;
-
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-
+import com.laamella.code_state_machine.*;
+import com.laamella.code_state_machine.priority.PriorityDeterminizer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
-import com.laamella.code_state_machine.Action;
-import com.laamella.code_state_machine.Actions;
-import com.laamella.code_state_machine.Condition;
-import com.laamella.code_state_machine.Conditions;
-import com.laamella.code_state_machine.StateMachine;
-import com.laamella.code_state_machine.Transition;
-import com.laamella.code_state_machine.priority.PriorityDeterminizer;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import java.io.IOException;
 
 /**
  * A State machine builder that attempts to read the <a
@@ -79,15 +70,15 @@ public abstract class ScxmlStateMachineBuilder<T, E> implements StateMachineBuil
 
     private final InputSource inputSource;
 
-    public ScxmlStateMachineBuilder(final InputSource inputSource) {
+    public ScxmlStateMachineBuilder(InputSource inputSource) {
         this.inputSource = inputSource;
     }
 
     @Override
-    public StateMachine<T, E, Integer> build(final StateMachine<T, E, Integer> machine)
+    public StateMachine<T, E, Integer> build(StateMachine<T, E, Integer> machine)
             throws ParserConfigurationException, SAXException, IOException {
-        final DocumentBuilder documentBuilder = documentBuilderFactory.newDocumentBuilder();
-        final Element root = (Element) documentBuilder.parse(inputSource).getChildNodes().item(0);
+        var documentBuilder = documentBuilderFactory.newDocumentBuilder();
+        var root = (Element) documentBuilder.parse(inputSource).getChildNodes().item(0);
 
         parseState(root, machine.new Internals());
         return machine;
@@ -100,18 +91,18 @@ public abstract class ScxmlStateMachineBuilder<T, E> implements StateMachineBuil
 
     private T parseState(final Element stateElement, final StateMachine<T, E, Integer>.Internals builder) {
         if (stateElement.hasAttribute(INITIAL_ATTRIBUTE)) {
-            final T initialState = interpretStateName(stateElement.getAttribute(INITIAL_ATTRIBUTE));
+            var initialState = interpretStateName(stateElement.getAttribute(INITIAL_ATTRIBUTE));
             builder.addStartState(initialState);
         }
-        final String stateName = stateElement.getAttribute(ID_ATTRIBUTE);
-        final T state = interpretStateName(stateName);
+        var stateName = stateElement.getAttribute(ID_ATTRIBUTE);
+        var state = interpretStateName(stateName);
 
-        final NodeList childNodes = stateElement.getChildNodes();
+        var childNodes = stateElement.getChildNodes();
         for (int i = 0; i < childNodes.getLength(); i++) {
-            final Node subNode = childNodes.item(i);
+            var subNode = childNodes.item(i);
             if (subNode.getNodeType() == Node.ELEMENT_NODE) {
-                final Element subElement = (Element) subNode;
-                final String subNodeName = subElement.getNodeName();
+                var subElement = (Element) subNode;
+                var subNodeName = subElement.getNodeName();
                 switch (subNodeName) {
                     case STATE_ELEMENT:
                     case PARALLEL_ELEMENT:
@@ -123,14 +114,14 @@ public abstract class ScxmlStateMachineBuilder<T, E> implements StateMachineBuil
                         break;
                     case TRANSITION_ELEMENT:
                         if (subElement.hasAttribute(TARGET_ATTRIBUTE)) {
-                            final T targetState = interpretStateName(subElement.getAttribute(TARGET_ATTRIBUTE));
+                            var targetState = interpretStateName(subElement.getAttribute(TARGET_ATTRIBUTE));
 
-                            final Conditions<E> conditions = new Conditions<>();
+                            var conditions = new Conditions<E>();
                             if (subElement.hasAttribute(CONDITION_ATTRIBUTE)) {
                                 conditions.add(interpretCondition(subElement.getAttribute(CONDITION_ATTRIBUTE)));
                             }
 
-                            final Actions actions = new Actions();
+                            var actions = new Actions();
                             if (subElement.hasAttribute(EVENT_ATTRIBUTE)) {
                                 actions.add(interpretEvent(subElement.getAttribute(EVENT_ATTRIBUTE)));
                             }
@@ -158,5 +149,4 @@ public abstract class ScxmlStateMachineBuilder<T, E> implements StateMachineBuil
     protected abstract Condition<E> interpretCondition(final String attribute);
 
     protected abstract T interpretStateName(final String name);
-
 }

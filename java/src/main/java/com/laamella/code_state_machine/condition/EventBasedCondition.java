@@ -20,7 +20,7 @@ public abstract class EventBasedCondition<E> implements Condition<E> {
 	}
 
 	@Override
-	public final void handleEvent(final E event) {
+	public final void handleEvent(E event) {
 		if (!isMet && conditionIsMetAfterHandlingEvent(event)) {
 			isMet = true;
 		}

@@ -41,302 +41,286 @@ import org.slf4j.LoggerFactory;
  * for the current state, or having the state machine trigger actions that
  * change the user code state.
  * </ul>
- * 
- * @param <T>
- *            State type. Each state should have a single instance of this type.
+ *
+ * @param <T> State type. Each state should have a single instance of this type.
  *            An enum is a good fit.
- * @param <E>
- *            Event type. Events come into the state machine from the outside
+ * @param <E> Event type. Events come into the state machine from the outside
  *            world, and are used to trigger state transitions.
- * @param <P>
- *            Priority type. Will be used to give priorities to transitions.
+ * @param <P> Priority type. Will be used to give priorities to transitions.
  *            Enums and Integers are useful here.
  */
 public class StateMachine<T, E, P extends Comparable<P>> {
-	private static final Logger log = LoggerFactory.getLogger(StateMachine.class);
+    private static final Logger log = LoggerFactory.getLogger(StateMachine.class);
 
-	private final Set<T> startStates = new HashSet<>();
-	private final Set<T> endStates = new HashSet<>();
-	private final Set<T> activeStates = new HashSet<>();
-	private final Map<T, Actions> exitEvents = new HashMap<>();
-	private final Map<T, Actions> entryEvents = new HashMap<>();
-	private final Map<T, Queue<Transition<T, E, P>>> transitions = new HashMap<>();
+    private final Set<T> startStates = new HashSet<>();
+    private final Set<T> endStates = new HashSet<>();
+    private final Set<T> activeStates = new HashSet<>();
+    private final Map<T, Actions> exitEvents = new HashMap<>();
+    private final Map<T, Actions> entryEvents = new HashMap<>();
+    private final Map<T, Queue<Transition<T, E, P>>> transitions = new HashMap<>();
 
-	/**
-	 * Create a new, empty state machine. To fill it, use the internals, or use
-	 * one of the builders.
-	 */
-	public StateMachine() {
-		log.debug("New Machine");
-	}
+    /**
+     * Create a new, empty state machine. To fill it, use the internals, or use
+     * one of the builders.
+     */
+    public StateMachine() {
+        log.debug("New Machine");
+    }
 
-	/**
-	 * Resets all active states to the start states.
-	 */
-	public void reset() {
-		log.debug("reset()");
-		if (startStates.size() == 0) {
-			log.warn("State machine does not contain any start states.");
-		}
-		activeStates.clear();
-		for (final T startState : startStates) {
-			enterState(startState);
-		}
-	}
+    /**
+     * Resets all active states to the start states.
+     */
+    public void reset() {
+        log.debug("reset()");
+        if (startStates.size() == 0) {
+            log.warn("State machine does not contain any start states.");
+        }
+        activeStates.clear();
+        for (var startState : startStates) {
+            enterState(startState);
+        }
+    }
 
-	/**
-	 * @return a set of all active states.
-	 */
-	public Set<T> getActiveStates() {
-		return activeStates;
-	}
+    /**
+     * @return a set of all active states.
+     */
+    public Set<T> getActiveStates() {
+        return activeStates;
+    }
 
-	/**
-	 * @return whether the state is currently active.
-	 */
-	public boolean isActive(final T state) {
-		return activeStates.contains(state);
-	}
+    /**
+     * @return whether the state is currently active.
+     */
+    public boolean isActive(T state) {
+        return activeStates.contains(state);
+    }
 
-	/**
-	 * @return whether no states are active. Can be caused by all active states
-	 *         having disappeared into end states, or by having no start states
-	 *         at all.
-	 */
-	public boolean isFinished() {
-		return activeStates.size() == 0;
-	}
+    /**
+     * @return whether no states are active. Can be caused by all active states
+     * having disappeared into end states, or by having no start states
+     * at all.
+     */
+    public boolean isFinished() {
+        return activeStates.size() == 0;
+    }
 
-	/**
-	 * Handle an event coming from the user application. After sending the event
-	 * to all transitions that have an active source state, poll() will be
-	 * called.
-	 * 
-	 * @param event
-	 *            some event that has happened.
-	 */
-	public void handleEvent(final E event) {
-		log.debug("handle event {}", event);
+    /**
+     * Handle an event coming from the user application. After sending the event
+     * to all transitions that have an active source state, poll() will be
+     * called.
+     *
+     * @param event some event that has happened.
+     */
+    public void handleEvent(E event) {
+        log.debug("handle event {}", event);
 
-		for (final T sourceState : activeStates) {
-			for (final Transition<T, E, P> transition : findTransitionsForState(sourceState)) {
-				transition.getCondition().handleEvent(event);
-			}
-		}
-		poll();
-	}
+        for (var sourceState : activeStates) {
+            for (var transition : findTransitionsForState(sourceState)) {
+                transition.getCondition().handleEvent(event);
+            }
+        }
+        poll();
+    }
 
-	/**
-	 * Tells the state machine to look for state changes to execute. This method
-	 * has to be called regularly, or the state machine will do nothing at all.
-	 * <ul>
-	 * <li>Repeat...</li>
-	 * <ol>
-	 * <li>For all transitions that have an active source state, find the
-	 * transitions that will fire.</li>
-	 * <ul>
-	 * <li>Ignore transitions that have already fired in this poll().</li>
-	 * <li>For a single source state, find the transition of the highest
-	 * priority which will fire (if any fire at all.) If multiple transitions
-	 * share this priority, fire them all.</li>
-	 * </ul>
-	 * <li>For all states that will be exited, fire the exit state event.</li>
-	 * <li>For all transitions that fire, fire the transition action.</li>
-	 * <li>For all states that will be entered, fire the entry state event.</li>
-	 * </ol>
-	 * <li>... until no new transitions have fired.</li>
-	 * </ul>
-	 * <p/>
-	 * This method prevents itself from looping endlessly on a loop in the state
-	 * machine by only considering transitions that have not fired before in
-	 * this poll.
-	 */
-	public void poll() {
-		boolean stillNewTransitionsFiring;
-		final Set<Transition<T, E, P>> transitionsThatHaveFiredBefore = new HashSet<>();
+    /**
+     * Tells the state machine to look for state changes to execute. This method
+     * has to be called regularly, or the state machine will do nothing at all.
+     * <ul>
+     * <li>Repeat...</li>
+     * <ol>
+     * <li>For all transitions that have an active source state, find the
+     * transitions that will fire.</li>
+     * <ul>
+     * <li>Ignore transitions that have already fired in this poll().</li>
+     * <li>For a single source state, find the transition of the highest
+     * priority which will fire (if any fire at all.) If multiple transitions
+     * share this priority, fire them all.</li>
+     * </ul>
+     * <li>For all states that will be exited, fire the exit state event.</li>
+     * <li>For all transitions that fire, fire the transition action.</li>
+     * <li>For all states that will be entered, fire the entry state event.</li>
+     * </ol>
+     * <li>... until no new transitions have fired.</li>
+     * </ul>
+     * <p/>
+     * This method prevents itself from looping endlessly on a loop in the state
+     * machine by only considering transitions that have not fired before in
+     * this poll.
+     */
+    public void poll() {
+        boolean stillNewTransitionsFiring;
+        final var transitionsThatHaveFiredBefore = new HashSet<Transition<T, E, P>>();
 
-		do {
-			stillNewTransitionsFiring = false;
-			final Set<T> statesToExit = new HashSet<>();
-			final Set<Transition<T, E, P>> transitionsToFire = new HashSet<>();
-			final Set<T> statesToEnter = new HashSet<>();
+        do {
+            stillNewTransitionsFiring = false;
+            final var statesToExit = new HashSet<T>();
+            final var transitionsToFire = new HashSet<Transition<T, E, P>>();
+            final var statesToEnter = new HashSet<T>();
 
-			for (final T sourceState : activeStates) {
-				P firingPriority = null;
-				for (final Transition<T, E, P> transition : findTransitionsForState(sourceState)) {
-					if (!transitionsThatHaveFiredBefore.contains(transition)) {
-						if (firingPriority != null && !transition.getPriority().equals(firingPriority)) {
-							// We reached a lower prio while higher prio transitions are firing.
-							// Don't consider these anymore, go to the next source state.
-							break;
-						}
-						if (transition.getCondition().isMet()) {
-							statesToExit.add(sourceState);
-							transitionsToFire.add(transition);
-							statesToEnter.add(transition.getDestinationState());
-							firingPriority = transition.getPriority();
-						}
-					}
-				}
-			}
+            for (var sourceState : activeStates) {
+                P firingPriority = null;
+                for (var transition : findTransitionsForState(sourceState)) {
+                    if (!transitionsThatHaveFiredBefore.contains(transition)) {
+                        if (firingPriority != null && !transition.getPriority().equals(firingPriority)) {
+                            // We reached a lower prio while higher prio transitions are firing.
+                            // Don't consider these anymore, go to the next source state.
+                            break;
+                        }
+                        if (transition.getCondition().isMet()) {
+                            statesToExit.add(sourceState);
+                            transitionsToFire.add(transition);
+                            statesToEnter.add(transition.getDestinationState());
+                            firingPriority = transition.getPriority();
+                        }
+                    }
+                }
+            }
 
-			for (final T stateToExit : statesToExit) {
-				exitState(stateToExit);
-			}
-			for (final Transition<T, E, P> transitionToFire : transitionsToFire) {
-				executeActions(transitionToFire.getActions());
-				transitionsThatHaveFiredBefore.add(transitionToFire);
-				stillNewTransitionsFiring = true;
-			}
-			for (final T stateToEnter : statesToEnter) {
-				enterState(stateToEnter);
-			}
+            for (var stateToExit : statesToExit) {
+                exitState(stateToExit);
+            }
+            for (var transitionToFire : transitionsToFire) {
+                executeActions(transitionToFire.getActions());
+                transitionsThatHaveFiredBefore.add(transitionToFire);
+                stillNewTransitionsFiring = true;
+            }
+            for (var stateToEnter : statesToEnter) {
+                enterState(stateToEnter);
+            }
 
-		} while (stillNewTransitionsFiring);
-	}
+        } while (stillNewTransitionsFiring);
+    }
 
-	private void executeActions(final Actions actions) {
-		if (actions != null) {
-			actions.execute();
-		}
-	}
+    private void executeActions(Actions actions) {
+        if (actions != null) {
+            actions.execute();
+        }
+    }
 
-	private void exitState(final T state) {
-		log.debug("exit state {}", state);
-		if (activeStates.contains(state)) {
-			executeExitActions(state);
-			activeStates.remove(state);
-		}
-	}
+    private void exitState(T state) {
+        log.debug("exit state {}", state);
+        if (activeStates.contains(state)) {
+            executeExitActions(state);
+            activeStates.remove(state);
+        }
+    }
 
-	private void enterState(final T newState) {
-		if (endStates.contains(newState)) {
-			log.debug("enter end state {}", newState);
-			executeEntryActions(newState);
-			if (activeStates.size() == 0) {
-				log.debug("machine is finished");
-			}
-			return;
-		}
-		if (activeStates.add(newState)) {
-			log.debug("enter state {}", newState);
-			executeEntryActions(newState);
-			resetTransitions(newState);
-		}
-	}
+    private void enterState(T newState) {
+        if (endStates.contains(newState)) {
+            log.debug("enter end state {}", newState);
+            executeEntryActions(newState);
+            if (activeStates.size() == 0) {
+                log.debug("machine is finished");
+            }
+            return;
+        }
+        if (activeStates.add(newState)) {
+            log.debug("enter state {}", newState);
+            executeEntryActions(newState);
+            resetTransitions(newState);
+        }
+    }
 
-	private void resetTransitions(final T sourceState) {
-		for (final Transition<T, E, P> transition : transitions.get(sourceState)) {
-			transition.getCondition().reset();
-		}
-	}
+    private void resetTransitions(T sourceState) {
+        for (var transition : transitions.get(sourceState)) {
+            transition.getCondition().reset();
+        }
+    }
 
-	private Queue<Transition<T, E, P>> findTransitionsForState(final T sourceState) {
-		return transitions.get(sourceState);
-	}
+    private Queue<Transition<T, E, P>> findTransitionsForState(T sourceState) {
+        return transitions.get(sourceState);
+    }
 
-	private void executeExitActions(final T state) {
-		executeActions(exitEvents.get(state));
-	}
+    private void executeExitActions(T state) {
+        executeActions(exitEvents.get(state));
+    }
 
-	private void executeEntryActions(final T state) {
-		executeActions(entryEvents.get(state));
-	}
+    private void executeEntryActions(T state) {
+        executeActions(entryEvents.get(state));
+    }
 
-	/**
-	 * Gives access to the internals of the state machine.
-	 */
-	public class Internals {
-		/**
-		 * @return the end states.
-		 */
-		public Set<T> getEndStates() {
-			return new HashSet<>(StateMachine.this.endStates);
-		}
+    /**
+     * Gives access to the internals of the state machine.
+     */
+    public class Internals {
+        /**
+         * @return the end states.
+         */
+        public Set<T> getEndStates() {
+            return new HashSet<>(StateMachine.this.endStates);
+        }
 
-		/**
-		 * @return the start states.
-		 */
-		public Set<T> getStartStates() {
-			return new HashSet<>(StateMachine.this.startStates);
-		}
+        /**
+         * @return the start states.
+         */
+        public Set<T> getStartStates() {
+            return new HashSet<>(StateMachine.this.startStates);
+        }
 
-		/**
-		 * @return the states that have outgoing transitions defined.
-		 */
-		public Set<T> getSourceStates() {
-			return new HashSet<>(StateMachine.this.transitions.keySet());
-		}
+        /**
+         * @return the states that have outgoing transitions defined.
+         */
+        public Set<T> getSourceStates() {
+            return new HashSet<>(StateMachine.this.transitions.keySet());
+        }
 
-		/**
-		 * @return the outgoing transitions for a source state.
-		 */
-		public Queue<Transition<T, E, P>> getTransitionsForSourceState(final T sourceState) {
-			return StateMachine.this.findTransitionsForState(sourceState);
-		}
+        /**
+         * @return the outgoing transitions for a source state.
+         */
+        public Queue<Transition<T, E, P>> getTransitionsForSourceState( T sourceState) {
+            return StateMachine.this.findTransitionsForState(sourceState);
+        }
 
-		// TODO complete meta information
+        // TODO complete meta information
 
-		/**
-		 * Add 0 or more actions to be executed when the state is exited.
-		 */
-		public void addExitActions(final T state, final Action... action) {
-			log.debug("Create exit action for '{}' ({}) ", state, action);
-			if (!exitEvents.containsKey(state)) {
-				exitEvents.put(state, new Actions(action));
-				return;
-			}
-			exitEvents.get(state).add(action);
-		}
+        /**
+         * Add 0 or more actions to be executed when the state is exited.
+         */
+        public void addExitActions(T state, Action... action) {
+            log.debug("Create exit action for '{}' ({}) ", state, action);
+            exitEvents.computeIfAbsent(state, t -> new Actions()).add(action);
+        }
 
-		/**
-		 * Add 0 or more actions to be executed when the state is entered.
-		 */
-		public void addEntryActions(final T state, final Action... action) {
-			log.debug("Create entry action for '{}' ({}) ", state, action);
-			if (!entryEvents.containsKey(state)) {
-				entryEvents.put(state, new Actions(action));
-				return;
-			}
-			entryEvents.get(state).add(action);
-		}
+        /**
+         * Add 0 or more actions to be executed when the state is entered.
+         */
+        public void addEntryActions(T state, Action... action) {
+            log.debug("Create entry action for '{}' ({}) ", state, action);
+            entryEvents.computeIfAbsent(state, t -> new Actions()).add(action);
+        }
 
-		/**
-		 * Add an end state.
-		 */
-		public void addEndState(final T endState) {
-			log.debug("Add end state '{}'", endState);
-			endStates.add(endState);
-		}
+        /**
+         * Add an end state.
+         */
+        public void addEndState(T endState) {
+            log.debug("Add end state '{}'", endState);
+            endStates.add(endState);
+        }
 
-		/**
-		 * Add a transition.
-		 */
-		public void addTransition(final Transition<T, E, P> transition) {
-			final T sourceState = transition.getSourceState();
-			log.debug("Create transition from '{}' to '{}' (pre: '{}', action: '{}')", sourceState,
-					transition.getDestinationState(), transition.getCondition(), transition.getActions());
-			if (!transitions.containsKey(sourceState)) {
-				transitions.put(sourceState, new PriorityQueue<>());
-			}
-			transitions.get(sourceState).add(transition);
-		}
+        /**
+         * Add a transition.
+         */
+        public void addTransition(Transition<T, E, P> transition) {
+            final var sourceState = transition.getSourceState();
+            log.debug("Create transition from '{}' to '{}' (pre: '{}', action: '{}')", sourceState,
+                    transition.getDestinationState(), transition.getCondition(), transition.getActions());
+            transitions.computeIfAbsent(sourceState, e -> new PriorityQueue<>()).add(transition);
+        }
 
-		/**
-		 * Adds a start state, and immediately activates it.
-		 */
-		public void addStartState(final T startState) {
-			log.debug("Add start state '{}'", startState);
-			startStates.add(startState);
-			activeStates.add(startState);
-		}
+        /**
+         * Adds a start state, and immediately activates it.
+         */
+        public void addStartState( T startState) {
+            log.debug("Add start state '{}'", startState);
+            startStates.add(startState);
+            activeStates.add(startState);
+        }
 
-		/**
-		 * @return the statemachine whose internals these are.
-		 */
-		public StateMachine<T, E, P> getStateMachine() {
-			return StateMachine.this;
-		}
-	}
-
+        /**
+         * @return the statemachine whose internals these are.
+         */
+        public StateMachine<T, E, P> getStateMachine() {
+            return StateMachine.this;
+        }
+    }
 }

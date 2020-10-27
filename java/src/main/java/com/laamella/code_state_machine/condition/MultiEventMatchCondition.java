@@ -12,21 +12,21 @@ public final class MultiEventMatchCondition<E> extends EventBasedCondition<E> {
 	private final Set<E> matchEvents;
 
 	@SafeVarargs
-	public MultiEventMatchCondition(final E... events) {
+	public MultiEventMatchCondition(E... events) {
 		matchEvents = new HashSet<>(Arrays.asList(events));
 	}
 
 	@Override
 	public String toString() {
-		final StringBuilder str = new StringBuilder("one of (");
-		for (final E matchEvent : matchEvents) {
+		var str = new StringBuilder("one of (");
+		for (var matchEvent : matchEvents) {
 			str.append(matchEvent.toString()).append(" ");
 		}
 		return str.append(")").toString();
 	}
 
 	@Override
-	protected boolean conditionIsMetAfterHandlingEvent(final E event) {
+	protected boolean conditionIsMetAfterHandlingEvent(E event) {
 		return matchEvents.contains(event);
 	}
 }
