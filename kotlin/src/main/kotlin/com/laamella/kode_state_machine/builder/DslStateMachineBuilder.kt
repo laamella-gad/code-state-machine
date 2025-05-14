@@ -28,7 +28,6 @@ abstract class DslStateMachineBuilder<T, E, P : Comparable<P>>(private val defau
         private val internals: StateMachine<T, E, P>.Internals
     ) {
 
-        @SafeVarargs
         fun except(vararg states: T): DefiningState {
             for (state in states) {
                 sourceStates.remove(state)
@@ -75,7 +74,6 @@ abstract class DslStateMachineBuilder<T, E, P : Comparable<P>>(private val defau
             return this.isAStartState
         }
 
-        @SafeVarargs
         fun `when`(vararg condition: Condition<E>): DefiningTransition {
             return DefiningTransition(sourceStates, Conditions(*condition), internals)
         }
@@ -85,7 +83,6 @@ abstract class DslStateMachineBuilder<T, E, P : Comparable<P>>(private val defau
             return DefiningTransition(sourceStates, Conditions(condition), internals)
         }
 
-        @SafeVarargs
         fun `when`(vararg events: E): DefiningTransition {
             return DefiningTransition(sourceStates, `is`(*events), internals)
         }
@@ -162,17 +159,14 @@ abstract class DslStateMachineBuilder<T, E, P : Comparable<P>>(private val defau
         return states(state)
     }
 
-    @SafeVarargs
     fun states(vararg states: T): DefiningState {
         return DefiningState(HashSet(Arrays.asList(*states)), machine!!.Internals())
     }
 
-    @SafeVarargs
     fun active(vararg statesThatMustBeActive: T): Condition<E> {
         return StatesActiveCondition(machine!!, *statesThatMustBeActive)
     }
 
-    @SafeVarargs
     fun inactive(vararg statesThatMustBeInactive: T): Condition<E> {
         return StatesInactiveCondition(machine!!, *statesThatMustBeInactive)
     }
@@ -180,12 +174,10 @@ abstract class DslStateMachineBuilder<T, E, P : Comparable<P>>(private val defau
     companion object {
         private val log: Logger = LoggerFactory.getLogger(DslStateMachineBuilder::class.java)
 
-        @JvmStatic
-        fun <E> always(): Condition<E?> {
-            return AlwaysCondition<E?>()
+        fun <E> always(): Condition<E> {
+            return AlwaysCondition()
         }
 
-        @JvmStatic
         fun <E> never(): Condition<E> {
             return NeverCondition()
         }
@@ -194,7 +186,6 @@ abstract class DslStateMachineBuilder<T, E, P : Comparable<P>>(private val defau
             return AfterCondition(milliseconds)
         }
 
-        @SafeVarargs
         fun <E> `is`(vararg events: E): Conditions<E> {
             assert(events.isNotEmpty())
 
@@ -206,9 +197,8 @@ abstract class DslStateMachineBuilder<T, E, P : Comparable<P>>(private val defau
             return Conditions(MultiEventMatchCondition<E>(*events))
         }
 
-        @JvmStatic
-        fun log(logText: String?): Action {
-            return LogAction(logText!!)
+        fun log(logText: String): Action {
+            return LogAction(logText)
         }
     }
 }

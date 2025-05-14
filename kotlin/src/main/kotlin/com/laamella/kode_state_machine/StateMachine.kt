@@ -105,7 +105,7 @@ class StateMachine<T, E, P : Comparable<P>> {
 
         for (sourceState in activeStates) {
             for (transition in findTransitionsForState(sourceState)!!) {
-                transition.condition.handleEvent(event)
+                transition.conditions.handleEvent(event)
             }
         }
         poll()
@@ -154,7 +154,7 @@ class StateMachine<T, E, P : Comparable<P>> {
                             // Don't consider these anymore, go to the next source state.
                             break
                         }
-                        if (transition.condition.isMet) {
+                        if (transition.conditions.isMet) {
                             statesToExit.add(sourceState)
                             transitionsToFire.add(transition)
                             statesToEnter.add(transition.destinationState)
@@ -210,7 +210,7 @@ class StateMachine<T, E, P : Comparable<P>> {
 
     private fun resetTransitions(sourceState: T) {
         for (transition in transitions.get(sourceState)!!) {
-            transition.condition.reset()
+            transition.conditions.reset()
         }
     }
 
@@ -289,7 +289,7 @@ class StateMachine<T, E, P : Comparable<P>> {
             val sourceState = transition.sourceState
             log.debug(
                 "Create transition from '{}' to '{}' (pre: '{}', action: '{}')", sourceState,
-                transition.destinationState, transition.condition, transition.actions
+                transition.destinationState, transition.conditions, transition.actions
             )
             transitions.computeIfAbsent(sourceState) { e -> PriorityQueue() }
                 .add(transition)

@@ -1,24 +1,17 @@
 package com.laamella.kode_state_machine.util
 
-import java.util.*
-
 /**
  * Simple base class for chaining instances of some type.
  */
-open class Chain<T> {
-    val items: MutableList<T>
-
-    constructor(vararg items: T) {
-        this.items = ArrayList<T>(Arrays.asList<T>(*items))
-    }
+open class Chain<T>(vararg items: T) {
+    val items: MutableList<T> = mutableListOf(*items)
 
     fun add(additionalItem: T) {
         items.add(additionalItem)
     }
 
-    @SafeVarargs
     fun add(vararg additionalItems: T) {
-        items.addAll(Arrays.asList<T>(*additionalItems))
+        items.addAll(additionalItems)
     }
 
     fun add(additionalItems: Chain<T>) {

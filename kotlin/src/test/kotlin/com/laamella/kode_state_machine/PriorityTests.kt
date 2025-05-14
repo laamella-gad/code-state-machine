@@ -1,79 +1,81 @@
-package com.laamella.kode_state_machine;
+package com.laamella.kode_state_machine
 
-import com.laamella.kode_state_machine.builder.DslStateMachineBuilder;
-import com.laamella.kode_state_machine.priority.Priority;
-import com.laamella.kode_state_machine.util.SimpleState;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import com.laamella.kode_state_machine.builder.DslStateMachineBuilder
+import com.laamella.kode_state_machine.priority.Priority
+import com.laamella.kode_state_machine.util.SimpleState
+import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 
-import static com.laamella.kode_state_machine.util.SimpleState.A;
-import static com.laamella.kode_state_machine.util.SimpleState.B;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+internal class PriorityTests {
+    private val trace = StringBuffer()
 
-class PriorityTests {
-    private final StringBuffer trace = new StringBuffer();
-
-    private StateMachine<SimpleState, Object, Priority> machine;
+    private var machine: StateMachine<SimpleState, Any, Priority>? = null
 
     @BeforeEach
-    void before() {
-        machine = new DslStateMachineBuilder<SimpleState, Object, Priority>(Priority.NORMAL) {
-            @Override
-            protected void executeBuildInstructions() {
-                state(A).isAStartState();
-                state(B).isAnEndState();
+    fun before() {
+        machine = object : DslStateMachineBuilder<SimpleState, Any, Priority>(Priority.NORMAL) {
+            override fun executeBuildInstructions() {
+                state(SimpleState.A).isAStartState
+                state(SimpleState.B).isAnEndState
             }
-        }.build();
+        }.build()
     }
 
-    private TraceAction trace(final String signature) {
-        return new TraceAction(trace, signature);
+    private fun trace(signature: String): TraceAction {
+        return TraceAction(trace, signature)
     }
 
     @Test
-    void highPrioIsTheOnlyOneFiring() {
-        new DslStateMachineBuilder<SimpleState, Object, Priority>(Priority.NORMAL) {
-            @Override
-            protected void executeBuildInstructions() {
-                state(A).when(always()).transition(B, always(), Priority.HIGH, trace("H"));
-                state(A).when(always()).transition(B, always(), Priority.NORMAL, trace("N"));
-                state(A).when(always()).transition(B, always(), Priority.LOWEST, trace("L"));
+    fun highPrioIsTheOnlyOneFiring() {
+        object : DslStateMachineBuilder<SimpleState, Any, Priority>(Priority.NORMAL) {
+            override fun executeBuildInstructions() {
+                state(SimpleState.A).`when`(always())
+                    .transition(SimpleState.B, always(), Priority.HIGH, trace("H"))
+                state(SimpleState.A).`when`(always())
+                    .transition(SimpleState.B, always(), Priority.NORMAL, trace("N"))
+                state(SimpleState.A).`when`(always())
+                    .transition(SimpleState.B, always(), Priority.LOWEST, trace("L"))
             }
-        }.build(machine);
+        }.build(machine!!)
 
-        machine.poll();
-        assertEquals("H", trace.toString());
+        machine!!.poll()
+        Assertions.assertEquals("H", trace.toString())
     }
 
     @Test
-    void normalPriosAreTheOnlyOnesFiringBecauseOtherPrioDoesntMeetCondition() {
-        new DslStateMachineBuilder<SimpleState, Object, Priority>(Priority.NORMAL) {
-            @Override
-            protected void executeBuildInstructions() {
-                state(A).when(always()).transition(B, never(), Priority.HIGH, trace("H"));
-                state(A).when(always()).transition(B, never(), Priority.NORMAL, trace("N"));
-                state(A).when(always()).transition(B, always(), Priority.NORMAL, trace("N"));
-                state(A).when(always()).transition(B, always(), Priority.NORMAL, trace("N"));
+    fun normalPriosAreTheOnlyOnesFiringBecauseOtherPrioDoesntMeetCondition() {
+        object : DslStateMachineBuilder<SimpleState, Any, Priority>(Priority.NORMAL) {
+            override fun executeBuildInstructions() {
+                state(SimpleState.A).`when`(always())
+                    .transition(SimpleState.B, never(), Priority.HIGH, trace("H"))
+                state(SimpleState.A).`when`(always())
+                    .transition(SimpleState.B, never(), Priority.NORMAL, trace("N"))
+                state(SimpleState.A).`when`(always())
+                    .transition(SimpleState.B, always(), Priority.NORMAL, trace("N"))
+                state(SimpleState.A).`when`(always())
+                    .transition(SimpleState.B, always(), Priority.NORMAL, trace("N"))
             }
-        }.build(machine);
+        }.build(machine!!)
 
-        machine.poll();
-        assertEquals("NN", trace.toString());
+        machine!!.poll()
+        Assertions.assertEquals("NN", trace.toString())
     }
 
     @Test
-    void equalPriosFireTogether() {
-        new DslStateMachineBuilder<SimpleState, Object, Priority>(Priority.NORMAL) {
-            @Override
-            protected void executeBuildInstructions() {
-                state(A).when(always()).transition(B, always(), Priority.HIGH, trace("H"));
-                state(A).when(always()).transition(B, always(), Priority.HIGH, trace("H"));
-                state(A).when(always()).transition(B, always(), Priority.LOWEST, trace("L"));
+    fun equalPriosFireTogether() {
+        object : DslStateMachineBuilder<SimpleState, Any, Priority>(Priority.NORMAL) {
+            override fun executeBuildInstructions() {
+                state(SimpleState.A).`when`(always())
+                    .transition(SimpleState.B, always(), Priority.HIGH, trace("H"))
+                state(SimpleState.A).`when`(always())
+                    .transition(SimpleState.B, always(), Priority.HIGH, trace("H"))
+                state(SimpleState.A).`when`(always())
+                    .transition(SimpleState.B, always(), Priority.LOWEST, trace("L"))
             }
-        }.build(machine);
+        }.build(machine!!)
 
-        machine.poll();
-        assertEquals("HH", trace.toString());
+        machine!!.poll()
+        Assertions.assertEquals("HH", trace.toString())
     }
-
 }

@@ -55,12 +55,12 @@ abstract class ScxmlStateMachineBuilder<T, E>(private val inputSource: InputSour
     private val documentBuilderFactory: DocumentBuilderFactory = DocumentBuilderFactory.newInstance()
 
     @Throws(ParserConfigurationException::class, SAXException::class, IOException::class)
-    override fun build(machine: StateMachine<T, E, Int>): StateMachine<T, E, Int> {
+    override fun build(newMachine: StateMachine<T, E, Int>): StateMachine<T, E, Int> {
         val documentBuilder = documentBuilderFactory.newDocumentBuilder()
         val root = documentBuilder.parse(inputSource).childNodes.item(0) as Element
 
-        parseState(root, machine.Internals())
-        return machine
+        parseState(root, newMachine.Internals())
+        return newMachine
     }
 
     @Throws(ParserConfigurationException::class, SAXException::class, IOException::class)

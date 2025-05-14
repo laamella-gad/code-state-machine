@@ -1,5 +1,5 @@
-package com.laamella.kode_state_machine.util;
+package com.laamella.kode_state_machine.util
 
-public enum SimpleEvent {
-	X, Y, Z
+enum class SimpleEvent {
+    X, Y, Z
 }

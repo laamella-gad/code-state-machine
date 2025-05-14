@@ -1,42 +1,39 @@
-package com.laamella.kode_state_machine;
+package com.laamella.kode_state_machine
 
-import com.laamella.kode_state_machine.builder.DslStateMachineBuilder;
-import com.laamella.kode_state_machine.io.DotOutput;
-import com.laamella.kode_state_machine.priority.Priority;
-import com.laamella.kode_state_machine.util.SimpleState;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.laamella.kode_state_machine.builder.DslStateMachineBuilder
+import com.laamella.kode_state_machine.io.DotOutput
+import com.laamella.kode_state_machine.priority.Priority
+import com.laamella.kode_state_machine.util.SimpleState
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
-import static com.laamella.kode_state_machine.StateMachineAssert.assertActive;
-import static com.laamella.kode_state_machine.util.SimpleState.*;
+class AutomaticFiringTests {
+    private var machine: StateMachine<SimpleState, Any, Priority>? = null
 
-public class AutomaticFiringTests {
-	private static final Logger log = LoggerFactory.getLogger(AutomaticFiringTests.class);
+    @BeforeEach
+    fun before() {
+        machine = object : DslStateMachineBuilder<SimpleState, Any, Priority>(Priority.NORMAL) {
+            override fun executeBuildInstructions() {
+                state(SimpleState.A).isAStartState.`when`(always()).then(SimpleState.B)
+                state(SimpleState.B).`when`(always()).then(SimpleState.C)
+                state(SimpleState.C).`when`(always()).then(SimpleState.D)
+                state(SimpleState.D).`when`(always()).then(SimpleState.E)
+                state(SimpleState.E).isAnEndState
+            }
+        }.build(StateMachine())
+        log.trace("\n" + DotOutput().getOutput(machine!!))
+    }
 
-	private StateMachine<SimpleState, Object, Priority> machine;
+    @Test
+    fun automaticFirings() {
+        StateMachineAssert.assertActive(machine!!, SimpleState.A)
+        machine!!.poll()
+        StateMachineAssert.assertActive(machine!!)
+    }
 
-	@BeforeEach
-	public void before() {
-		machine = new DslStateMachineBuilder<SimpleState, Object, Priority>(Priority.NORMAL) {
-			@Override
-			protected void executeBuildInstructions() {
-				state(A).isAStartState().when(always()).then(B);
-				state(B).when(always()).then(C);
-				state(C).when(always()).then(D);
-				state(D).when(always()).then(E);
-				state(E).isAnEndState();
-			}
-		}.build(new StateMachine<>());
-		log.trace("\n" + new DotOutput<SimpleState, Object, Priority>().getOutput(machine));
-	}
-
-	@Test
-	public void automaticFirings() {
-		assertActive(machine, A);
-		machine.poll();
-		assertActive(machine);
-	}
-
+    companion object {
+        private val log: Logger = LoggerFactory.getLogger(AutomaticFiringTests::class.java)
+    }
 }

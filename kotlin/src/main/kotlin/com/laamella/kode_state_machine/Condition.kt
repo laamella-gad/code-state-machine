@@ -3,9 +3,8 @@ package com.laamella.kode_state_machine
 /**
  * A way to define a condition that is met or not.
  *
- * @param <E>
- * event type.
-</E> */
+ * @param E event type.
+ */
 interface Condition<E> {
     /**
      * Handle an event.

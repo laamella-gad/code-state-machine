@@ -6,8 +6,8 @@ import com.laamella.kode_state_machine.StateMachine
  * Creates a simple "dot" diagram of the state machine. Start states are double
  * circles, end states are dotted circles, entry and exit events are not shown.
  */
-class DotOutput<T, E, P : Comparable<P>> {
-    fun getOutput(machine: StateMachine<T, E, P>): String {
+class DotOutput {
+    fun <T, E, P : Comparable<P>> getOutput(machine: StateMachine<T, E, P>): String {
         val internals = machine.Internals()
 
         val output = StringBuilder()
@@ -32,7 +32,7 @@ class DotOutput<T, E, P : Comparable<P>> {
         for (sourceState in internals.sourceStates) {
             for (transition in internals.getTransitionsForSourceState(sourceState)!!) {
                 output.append("\t").append(sourceState).append(" -> ").append(transition.destinationState)
-                output.append(" [ label = \"").append(transition.condition).append("\" ]")
+                output.append(" [ label = \"").append(transition.conditions).append("\" ]")
                 output.append(";\n")
             }
         }

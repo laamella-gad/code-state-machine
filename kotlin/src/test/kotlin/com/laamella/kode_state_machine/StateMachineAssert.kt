@@ -1,24 +1,23 @@
-package com.laamella.kode_state_machine;
+package com.laamella.kode_state_machine
 
-import java.util.Arrays;
-import java.util.HashSet;
+import org.junit.jupiter.api.Assertions
+import java.util.*
 
-import static org.junit.jupiter.api.Assertions.fail;
-
-public class StateMachineAssert {
-    @SafeVarargs
-    public static <T extends Enum<?>, E, P extends Comparable<P>> void assertActive( StateMachine<T, E, P> machine,  T... expectedStates) {
-        for (var expectedState : expectedStates) {
+object StateMachineAssert {
+    fun <T : Enum<*>, E, P : Comparable<P>> assertActive(
+        machine: StateMachine<T, E, P>,
+        vararg expectedStates: T
+    ) {
+        for (expectedState in expectedStates) {
             if (!machine.isActive(expectedState)) {
-                fail("Expected " + expectedState + " to be active.");
+                Assertions.fail<Any?>("Expected $expectedState to be active.")
             }
         }
-        var expectedStatesSet = new HashSet<>(Arrays.asList(expectedStates));
-        for (var actualState : machine.activeStates) {
+        val expectedStatesSet = HashSet(Arrays.asList(*expectedStates))
+        for (actualState in machine.activeStates) {
             if (!expectedStatesSet.contains(actualState)) {
-                fail("" + actualState + " was active, but not expected.");
+                Assertions.fail<Any?>("$actualState was active, but not expected.")
             }
         }
     }
-
 }
