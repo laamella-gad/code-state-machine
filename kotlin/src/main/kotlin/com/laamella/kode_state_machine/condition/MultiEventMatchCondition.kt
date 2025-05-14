@@ -7,7 +7,7 @@ import java.util.*
  * the constructor.
  */
 class MultiEventMatchCondition<E>(vararg events: E) : EventBasedCondition<E>() {
-    private val matchEvents: MutableSet<E> = HashSet<E>(Arrays.asList<E>(*events))
+    private val matchEvents = mutableSetOf(*events)
 
     override fun toString(): String {
         val str = StringBuilder("one of (")

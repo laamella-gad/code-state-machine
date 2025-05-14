@@ -7,54 +7,26 @@ import org.slf4j.LoggerFactory
 import org.w3c.dom.Element
 import org.w3c.dom.Node
 import org.xml.sax.InputSource
-import org.xml.sax.SAXException
-import java.io.IOException
 import javax.xml.parsers.DocumentBuilderFactory
-import javax.xml.parsers.ParserConfigurationException
 
 /**
  * A State machine builder that attempts to read the [SCXML](http://www.w3.org/TR/scxml/) format. Since many features are
  * mismatched, it does not do a very good job.
- * <table>
- * <tr>
- * <td>Supported?
-</td> * <td>Feature
-</td></tr> *
- * <tr>
- * <td>&#x2713;
-</td> * <td>normal/start/end states
-</td></tr> *
- * <tr>
- * <td>&#x2713; / &#x2717;
-</td> * <td>on entry/on exit events (interpretation is up to the user)
-</td></tr> *
- * <tr>
- * <td>&#x2713; / &#x2717;
-</td> * <td>event (action) on transition (interpretation is up to the user)
-</td></tr> *
- * <tr>
- * <td>&#x2713; / &#x2717;
-</td> * <td>(pre)conditions for transitions (interpretation is up to the user)
-</td></tr> *
- * <tr>
- * <td>&#x2717;
-</td> * <td>clusters, compound states, or sub state machines (treated as normal
- * states. Substates are mixed into the main state machine)
-</td></tr> *
- * <tr>
- * <td>&#x2717;
-</td> * <td>executable content
-</td></tr> *
- * <tr>
- * <td>&#x2717;
-</td> * <td>parallel states (treated as normal states)
-</td></tr> *
-</table> */
-abstract class ScxmlStateMachineBuilder<T, E>(private val inputSource: InputSource?) :
+ *
+ * | Supported  | Feature|
+ * | :---- | :---- |
+ * | ✓     | normal/start/end states      |
+ * | ✓ / ✗     | on entry/on exit events (interpretation is up to the user)      |
+ * | ✓ / ✗     | event (action) on transition (interpretation is up to the user)      |
+ * | ✓ / ✗     | (pre)conditions for transitions (interpretation is up to the user)      |
+ * | ✗     | clusters, compound states, or substate machines (treated as normal states. Substates are mixed into the main state machine)      |
+ * | ✗     | executable content      |
+ * | ✗     | parallel states (treated as normal states)      |
+ */
+abstract class ScxmlStateMachineBuilder<T, E>(private val inputSource: InputSource) :
     StateMachineBuilder<T, E, Int> {
     private val documentBuilderFactory: DocumentBuilderFactory = DocumentBuilderFactory.newInstance()
 
-    @Throws(ParserConfigurationException::class, SAXException::class, IOException::class)
     override fun build(newMachine: StateMachine<T, E, Int>): StateMachine<T, E, Int> {
         val documentBuilder = documentBuilderFactory.newDocumentBuilder()
         val root = documentBuilder.parse(inputSource).childNodes.item(0) as Element
@@ -63,7 +35,6 @@ abstract class ScxmlStateMachineBuilder<T, E>(private val inputSource: InputSour
         return newMachine
     }
 
-    @Throws(ParserConfigurationException::class, SAXException::class, IOException::class)
     override fun build(): StateMachine<T, E, Int> {
         return build(StateMachine())
     }

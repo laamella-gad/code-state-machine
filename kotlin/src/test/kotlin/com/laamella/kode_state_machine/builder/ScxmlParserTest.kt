@@ -4,16 +4,12 @@ import com.laamella.kode_state_machine.Action
 import com.laamella.kode_state_machine.Condition
 import com.laamella.kode_state_machine.action.LogAction
 import com.laamella.kode_state_machine.condition.AlwaysCondition
-import com.laamella.kode_state_machine.io.DotOutput
+import com.laamella.kode_state_machine.io.dotOutput
 import org.junit.jupiter.api.Test
 import org.xml.sax.InputSource
-import org.xml.sax.SAXException
-import java.io.IOException
-import javax.xml.parsers.ParserConfigurationException
 
 class ScxmlParserTest {
     @Test
-    @Throws(ParserConfigurationException::class, SAXException::class, IOException::class)
     fun readTestScxml() {
         val inputSource = InputSource(ScxmlStateMachineBuilder::class.java.getResourceAsStream("/test.scxml"))
         val scxmlParser: ScxmlStateMachineBuilder<String, String> =
@@ -31,7 +27,7 @@ class ScxmlParserTest {
                 }
             }
         val stateMachine = scxmlParser.build()
-        println(DotOutput().getOutput(stateMachine))
+        println(dotOutput(stateMachine))
         //		final StateMachine<String, String, Priority> stateMachine = builder.build();
         // TODO finish tests
     }

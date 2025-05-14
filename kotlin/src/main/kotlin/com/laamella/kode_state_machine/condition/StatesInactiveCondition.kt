@@ -9,7 +9,6 @@ class StatesInactiveCondition<T, E, P : Comparable<P>>(
     private val stateMachine: StateMachine<T, E, P>,
     private vararg val statesThatMustBeInactive: T
 ) : NonEventBasedCondition<E>() {
-
     override val isMet: Boolean
         get() {
             for (stateThatMustBeInactive in statesThatMustBeInactive) {

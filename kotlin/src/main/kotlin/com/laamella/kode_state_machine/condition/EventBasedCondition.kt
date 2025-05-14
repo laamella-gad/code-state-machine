@@ -20,8 +20,7 @@ abstract class EventBasedCondition<E> : Condition<E> {
     }
 
     /**
-     * @param event
-     * the event to handle.
+     * @param event the event to handle.
      * @return whether the condition is met.
      */
     protected abstract fun conditionIsMetAfterHandlingEvent(event: E): Boolean

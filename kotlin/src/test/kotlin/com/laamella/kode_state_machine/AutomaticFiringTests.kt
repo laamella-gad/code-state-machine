@@ -1,7 +1,7 @@
 package com.laamella.kode_state_machine
 
 import com.laamella.kode_state_machine.builder.DslStateMachineBuilder
-import com.laamella.kode_state_machine.io.DotOutput
+import com.laamella.kode_state_machine.io.dotOutput
 import com.laamella.kode_state_machine.priority.Priority
 import com.laamella.kode_state_machine.util.SimpleState
 import org.junit.jupiter.api.BeforeEach
@@ -16,14 +16,14 @@ class AutomaticFiringTests {
     fun before() {
         machine = object : DslStateMachineBuilder<SimpleState, Any, Priority>(Priority.NORMAL) {
             override fun executeBuildInstructions() {
-                state(SimpleState.A).isAStartState.`when`(always()).then(SimpleState.B)
+                state(SimpleState.A).isAStartState().`when`(always()).then(SimpleState.B)
                 state(SimpleState.B).`when`(always()).then(SimpleState.C)
                 state(SimpleState.C).`when`(always()).then(SimpleState.D)
                 state(SimpleState.D).`when`(always()).then(SimpleState.E)
-                state(SimpleState.E).isAnEndState
+                state(SimpleState.E).isAnEndState()
             }
         }.build(StateMachine())
-        log.trace("\n" + DotOutput().getOutput(machine!!))
+        log.trace("\n" + dotOutput(machine!!))
     }
 
     @Test

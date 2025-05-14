@@ -31,7 +31,7 @@ open class Chain<T>(vararg items: T) {
             return "always"
         }
         if (items.size == 1) {
-            return items.get(0).toString()
+            return items[0].toString()
         }
         val buffer = StringBuilder("[")
         for (item in items) {

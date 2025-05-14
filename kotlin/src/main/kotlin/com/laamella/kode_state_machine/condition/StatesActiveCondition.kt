@@ -10,7 +10,7 @@ class StatesActiveCondition<T, E, P : Comparable<P>>(
     private val stateMachine: StateMachine<T, E, P>,
     vararg statesThatMustBeActive: T
 ) : NonEventBasedCondition<E>() {
-    private val statesThatMustBeActive: HashSet<T> = HashSet<T>(Arrays.asList<T>(*statesThatMustBeActive))
+    private val statesThatMustBeActive = mutableSetOf(*statesThatMustBeActive)
 
     override val isMet: Boolean
         get() = stateMachine.activeStates.containsAll(statesThatMustBeActive)

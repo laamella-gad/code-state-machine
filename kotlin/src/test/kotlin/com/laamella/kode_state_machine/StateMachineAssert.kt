@@ -13,7 +13,7 @@ object StateMachineAssert {
                 Assertions.fail<Any?>("Expected $expectedState to be active.")
             }
         }
-        val expectedStatesSet = HashSet(Arrays.asList(*expectedStates))
+        val expectedStatesSet = setOf(*expectedStates)
         for (actualState in machine.activeStates) {
             if (!expectedStatesSet.contains(actualState)) {
                 Assertions.fail<Any?>("$actualState was active, but not expected.")

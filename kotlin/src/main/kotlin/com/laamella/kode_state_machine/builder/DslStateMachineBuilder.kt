@@ -50,28 +50,26 @@ abstract class DslStateMachineBuilder<T, E, P : Comparable<P>>(private val defau
             return this
         }
 
-        val isAnEndState: DefiningState
-            get() {
-                for (state in sourceStates) {
-                    internals.addEndState(state)
-                }
-                return this
+        fun isAnEndState(): DefiningState {
+            for (state in sourceStates) {
+                internals.addEndState(state)
             }
+            return this
+        }
 
-        val isAStartState: DefiningState
-            get() {
-                for (state in sourceStates) {
-                    internals.addStartState(state)
-                }
-                return this
+        fun isAStartState(): DefiningState {
+            for (state in sourceStates) {
+                internals.addStartState(state)
             }
+            return this
+        }
 
         fun areEndStates(): DefiningState {
-            return this.isAnEndState
+            return this.isAnEndState()
         }
 
         fun areStartStates(): DefiningState {
-            return this.isAStartState
+            return this.isAStartState()
         }
 
         fun `when`(vararg condition: Condition<E>): DefiningTransition {

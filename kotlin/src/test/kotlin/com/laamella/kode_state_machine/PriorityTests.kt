@@ -16,8 +16,8 @@ internal class PriorityTests {
     fun before() {
         machine = object : DslStateMachineBuilder<SimpleState, Any, Priority>(Priority.NORMAL) {
             override fun executeBuildInstructions() {
-                state(SimpleState.A).isAStartState
-                state(SimpleState.B).isAnEndState
+                state(SimpleState.A).isAStartState()
+                state(SimpleState.B).isAnEndState()
             }
         }.build()
     }
