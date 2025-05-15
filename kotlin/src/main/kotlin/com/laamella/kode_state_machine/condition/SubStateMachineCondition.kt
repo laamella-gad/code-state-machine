@@ -19,7 +19,7 @@ class SubStateMachineCondition<T, E, P : Comparable<P>>(
     EventBasedCondition<E>() {
     override fun conditionIsMetAfterHandlingEvent(event: E): Boolean {
         stateMachine.handleEvent(event)
-        return stateMachine.isFinished
+        return stateMachine.isFinished()
     }
 
     override fun reset() {

@@ -44,17 +44,16 @@ import java.util.*
  * Enums and Integers are useful here.
  */
 class StateMachine<T, E, P : Comparable<P>> {
-    private val startStates: MutableSet<T> = HashSet<T>()
-    private val endStates: MutableSet<T> = HashSet<T>()
+    private val startStates = mutableSetOf<T>()
+    private val endStates = mutableSetOf<T>()
 
     /**
      * @return a set of all active states.
      */
-    @JvmField
-    val activeStates: MutableSet<T> = HashSet<T>()
-    private val exitEvents: MutableMap<T, Actions> = HashMap<T, Actions>()
-    private val entryEvents: MutableMap<T, Actions> = HashMap<T, Actions>()
-    private val transitions: MutableMap<T, Queue<Transition<T, E, P>>> = HashMap<T, Queue<Transition<T, E, P>>>()
+    val activeStates =mutableSetOf<T>()
+    private val exitEvents = mutableMapOf<T, Actions>()
+    private val entryEvents = mutableMapOf<T, Actions>()
+    private val transitions= mutableMapOf<T, Queue<Transition<T, E, P>>>()
 
     /**
      * Create a new, empty state machine. To fill it, use the internals, or use
@@ -69,7 +68,7 @@ class StateMachine<T, E, P : Comparable<P>> {
      */
     fun reset() {
         log.debug("reset()")
-        if (startStates.size == 0) {
+        if (startStates.isEmpty()) {
             log.warn("State machine does not contain any start states.")
         }
         activeStates.clear()
@@ -81,17 +80,11 @@ class StateMachine<T, E, P : Comparable<P>> {
     /**
      * @return whether the state is currently active.
      */
-    fun isActive(state: T?): Boolean {
+    fun isActive(state: T): Boolean {
         return activeStates.contains(state)
     }
 
-    val isFinished: Boolean
-        /**
-         * @return whether no states are active. Can be caused by all active states
-         * having disappeared into end states, or by having no start states
-         * at all.
-         */
-        get() = activeStates.size == 0
+    fun isFinished(): Boolean = activeStates.isEmpty()
 
     /**
      * Handle an event coming from the user application. After sending the event
@@ -137,13 +130,13 @@ class StateMachine<T, E, P : Comparable<P>> {
      */
     fun poll() {
         var stillNewTransitionsFiring: Boolean
-        val transitionsThatHaveFiredBefore = HashSet<Transition<T, E, P>>()
+        val transitionsThatHaveFiredBefore = mutableSetOf<Transition<T, E, P>>()
 
         do {
             stillNewTransitionsFiring = false
-            val statesToExit = HashSet<T>()
-            val transitionsToFire = HashSet<Transition<T, E, P>>()
-            val statesToEnter = HashSet<T>()
+            val statesToExit = mutableSetOf<T>()
+            val transitionsToFire = mutableSetOf<Transition<T, E, P>>()
+            val statesToEnter = mutableSetOf<T>()
 
             for (sourceState in activeStates) {
                 var firingPriority: P? = null
@@ -179,9 +172,7 @@ class StateMachine<T, E, P : Comparable<P>> {
     }
 
     private fun executeActions(actions: Actions?) {
-        if (actions != null) {
-            actions.execute()
-        }
+        actions?.execute()
     }
 
     private fun exitState(state: T) {
@@ -196,7 +187,7 @@ class StateMachine<T, E, P : Comparable<P>> {
         if (endStates.contains(newState)) {
             log.debug("enter end state {}", newState)
             executeEntryActions(newState)
-            if (activeStates.size == 0) {
+            if (activeStates.isEmpty()) {
                 log.debug("machine is finished")
             }
             return
@@ -209,46 +200,30 @@ class StateMachine<T, E, P : Comparable<P>> {
     }
 
     private fun resetTransitions(sourceState: T) {
-        for (transition in transitions.get(sourceState)!!) {
+        transitions[sourceState]?.forEach { transition ->
             transition.conditions.reset()
         }
     }
 
     private fun findTransitionsForState(sourceState: T): Queue<Transition<T, E, P>>? {
-        return transitions.get(sourceState)
+        return transitions[sourceState]
     }
 
     private fun executeExitActions(state: T?) {
-        executeActions(exitEvents.get(state))
+        executeActions(exitEvents[state])
     }
 
     private fun executeEntryActions(state: T?) {
-        executeActions(entryEvents.get(state))
+        executeActions(entryEvents[state])
     }
 
     /**
      * Gives access to the internals of the state machine.
      */
     inner class Internals {
-        /**
-         * @return the end states.
-         */
-        fun getEndStates(): MutableSet<T> {
-            return HashSet<T>(this@StateMachine.endStates)
-        }
-
-        /**
-         * @return the start states.
-         */
-        fun getStartStates(): MutableSet<T> {
-            return HashSet<T>(this@StateMachine.startStates)
-        }
-
-        val sourceStates: MutableSet<T>
-            /**
-             * @return the states that have outgoing transitions defined.
-             */
-            get() = HashSet<T>(this@StateMachine.transitions.keys)
+        fun getEndStates(): Set<T> = this@StateMachine.endStates
+        fun getStartStates(): Set<T> = this@StateMachine.startStates
+        fun getSourceStates(): Set<T> = this@StateMachine.transitions.keys
 
         /**
          * @return the outgoing transitions for a source state.

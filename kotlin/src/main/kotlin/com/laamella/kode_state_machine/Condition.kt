@@ -9,8 +9,7 @@ interface Condition<E> {
     /**
      * Handle an event.
      *
-     * @param event
-     * the event that has occurred.
+     * @param event the event that has occurred.
      */
     fun handleEvent(event: E)
 

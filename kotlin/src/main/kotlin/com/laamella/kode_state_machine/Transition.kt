@@ -3,35 +3,22 @@ package com.laamella.kode_state_machine
 /**
  * A conditional transition between two states.
  *
- * @param <T> type of state.
- * @param <E> type of event.
- * @param <P> type of priority.
+ * @param sourceState the state that must be active for this transition to fire.
+ * @param destinationState the state that will be entered when this transition fires.
+ * @param conditions the condition that must be met for this transition to fire.
+ * @param priority the priority of this transition. If this transitions fires, no lower priority transitions for the same source state are allowed to fire.
+ * @param actions the actions that will be executed when this transition fires.
+ * @param T type of state.
+ * @param E type of event.
+ * @param P type of priority.
  */
 class Transition<T, E, P : Comparable<P>>(
-    /**
-     * @return the state that must be active for this transition to fire.
-     */
     val sourceState: T,
-    /**
-     * @return the state that will be entered when this transition fires.
-     */
     val destinationState: T,
-    /**
-     * @return the condition that must be met for this transition to fire.
-     */
     val conditions: Conditions<E>,
-    /**
-     * @return the priority of this transition. If this transitions fires, no
-     * lower priority transitions for the same source state are allowed
-     * to fire.
-     */
     val priority: P,
-    /**
-     * @return The actions that will be executed when this transition fires.
-     */
     val actions: Actions
 ) : Comparable<Transition<T, E, P>> {
-
     /**
      * Compares transitions on their priorities.
      */

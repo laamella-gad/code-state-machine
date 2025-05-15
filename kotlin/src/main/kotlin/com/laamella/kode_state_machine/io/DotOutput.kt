@@ -28,7 +28,7 @@ fun <T, E, P : Comparable<P>> dotOutput(machine: StateMachine<T, E, P>): String 
         output.append(";\n")
     }
     output.append("\tnode [shape = circle, style=solid];\n")
-    for (sourceState in internals.sourceStates) {
+    for (sourceState in internals.getSourceStates()) {
         for (transition in internals.getTransitionsForSourceState(sourceState)!!) {
             output.append("\t").append(sourceState).append(" -> ").append(transition.destinationState)
             output.append(" [ label = \"").append(transition.conditions).append("\" ]")

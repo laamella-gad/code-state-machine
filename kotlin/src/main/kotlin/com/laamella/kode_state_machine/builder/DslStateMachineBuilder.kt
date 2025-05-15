@@ -27,7 +27,6 @@ abstract class DslStateMachineBuilder<T, E, P : Comparable<P>>(private val defau
         private val sourceStates: MutableSet<T>,
         private val internals: StateMachine<T, E, P>.Internals
     ) {
-
         fun except(vararg states: T): DefiningState {
             for (state in states) {
                 sourceStates.remove(state)
@@ -92,7 +91,7 @@ abstract class DslStateMachineBuilder<T, E, P : Comparable<P>>(private val defau
         private val internals: StateMachine<T, E, P>.Internals
     ) {
         private val actions = Actions()
-        private var priority: P = defaultPriority
+        private var priority = defaultPriority
 
         fun action(action: Action): DefiningTransition {
             this.actions.add(action)
@@ -130,7 +129,7 @@ abstract class DslStateMachineBuilder<T, E, P : Comparable<P>>(private val defau
             priority: P,
             vararg actions: Action
         ): DefiningState {
-            return transition(destinationState, Conditions<E>(condition), priority, Actions(*actions))
+            return transition(destinationState, Conditions(condition), priority, Actions(*actions))
         }
 
         fun withPrio(priority: P): DefiningTransition {
@@ -158,7 +157,7 @@ abstract class DslStateMachineBuilder<T, E, P : Comparable<P>>(private val defau
     }
 
     fun states(vararg states: T): DefiningState {
-        return DefiningState(HashSet(Arrays.asList(*states)), machine!!.Internals())
+        return DefiningState(mutableSetOf(*states), machine!!.Internals())
     }
 
     fun active(vararg statesThatMustBeActive: T): Condition<E> {
@@ -189,10 +188,10 @@ abstract class DslStateMachineBuilder<T, E, P : Comparable<P>>(private val defau
 
             if (events.size == 1) {
                 val singleEvent: E = events[0]
-                return Conditions(SingleEventMatchCondition<E>(singleEvent))
+                return Conditions(SingleEventMatchCondition(singleEvent))
             }
 
-            return Conditions(MultiEventMatchCondition<E>(*events))
+            return Conditions(MultiEventMatchCondition(*events))
         }
 
         fun log(logText: String): Action {

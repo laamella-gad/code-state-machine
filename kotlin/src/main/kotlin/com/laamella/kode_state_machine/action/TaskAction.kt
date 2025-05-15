@@ -12,16 +12,15 @@ import java.lang.Thread.State.TERMINATED
  */
 // TODO test
 abstract class TaskAction<E> : Runnable, FinishableAction<E> {
-    private var taskThread: Thread? = null
     private var finishedCondition: NonEventBasedCondition<E>? = null
 
     override fun execute() {
-        taskThread = Thread(this)
+        val taskThread = Thread(this)
         finishedCondition = object : NonEventBasedCondition<E>() {
             override val isMet: Boolean
-                get() = taskThread!!.state == TERMINATED
+                get() = taskThread.state == TERMINATED
         }
-        taskThread!!.start()
+        taskThread.start()
     }
 
     override val isFinished: Condition<E>
