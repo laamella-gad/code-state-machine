@@ -23,25 +23,26 @@ import javax.xml.parsers.DocumentBuilderFactory
  * | ✗     | executable content      |
  * | ✗     | parallel states (treated as normal states)      |
  */
-abstract class ScxmlStateMachineBuilder<T, E>(private val inputSource: InputSource)  {
+abstract class ScxmlStateMachineBuilder<T, E>(private val inputSource: InputSource) {
     private val documentBuilderFactory: DocumentBuilderFactory = DocumentBuilderFactory.newInstance()
 
-    override fun build(newMachine: StateMachineBuilder<T, E, Int>): StateMachine<T, E, Int> {
+    fun build(newMachine: StateMachineBuilder<T, E, Int>) {
         val documentBuilder = documentBuilderFactory.newDocumentBuilder()
         val root = documentBuilder.parse(inputSource).childNodes.item(0) as Element
 
-        parseState(root, newMachine.Internals())
-        return newMachine
+        parseState(root, newMachine)
     }
 
-    override fun build(): StateMachineBuilder<T, E, Int> {
-        return build(StateMachineBuilder(defaultPriority))
+    fun build(): StateMachine<T, E, Int> {
+        val stateMachineBuilder = stateMachine<T, E, Int>(0) {}
+        build(stateMachineBuilder)
+        return stateMachineBuilder.build()
     }
 
-    private fun parseState(stateElement: Element, builder: StateMachine<T, E, Int>.Internals): T {
+    private fun parseState(stateElement: Element, builder: StateMachineBuilder<T, E, Int>): T {
         if (stateElement.hasAttribute(INITIAL_ATTRIBUTE)) {
             val initialState = interpretStateName(stateElement.getAttribute(INITIAL_ATTRIBUTE))
-            builder.addStartState(initialState)
+            builder.more { state(initialState) { isAStartState() } }
         }
         val stateName = stateElement.getAttribute(ID_ATTRIBUTE)
         val state = interpretStateName(stateName)
@@ -54,7 +55,7 @@ abstract class ScxmlStateMachineBuilder<T, E>(private val inputSource: InputSour
                 val subNodeName = subElement.nodeName
                 when (subNodeName) {
                     STATE_ELEMENT, PARALLEL_ELEMENT, ROOT_STATE_MACHINE_ELEMENT -> parseState(subElement, builder)
-                    FINAL_STATE_ELEMENT -> builder.addEndState(parseState(subElement, builder))
+                    FINAL_STATE_ELEMENT -> builder.more { state(parseState(subElement, builder)) { isAnEndState() } }
                     TRANSITION_ELEMENT -> if (subElement.hasAttribute(TARGET_ATTRIBUTE)) {
                         val targetState = interpretStateName(subElement.getAttribute(TARGET_ATTRIBUTE))
 
