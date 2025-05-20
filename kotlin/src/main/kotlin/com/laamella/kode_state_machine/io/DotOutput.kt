@@ -7,29 +7,29 @@ import com.laamella.kode_state_machine.StateMachine
  * circles, end states are dotted circles, entry and exit events are not shown.
  */
 fun <T, E, P : Comparable<P>> dotOutput(machine: StateMachine<T, E, P>): String {
-    val internals = machine.Internals()
+    val internals = machine
 
     val output = StringBuilder()
     output.append("digraph finite_state_machine {\n")
     output.append("\trankdir=LR;\n")
     output.append("\tsize=\"8,5\"\n")
-    if (!internals.getStartStates().isEmpty()) {
+    if (!internals.startStates.isEmpty()) {
         output.append("\tnode [shape = doublecircle, style=solid];")
-        for (startState in internals.getStartStates()) {
+        for (startState in internals.startStates) {
             output.append(" ").append(startState)
         }
         output.append(";\n")
     }
-    if (!internals.getEndStates().isEmpty()) {
+    if (!internals.endStates.isEmpty()) {
         output.append("\tnode [shape = circle, style=dotted];")
-        for (startState in internals.getEndStates()) {
+        for (startState in internals.endStates) {
             output.append(" ").append(startState)
         }
         output.append(";\n")
     }
     output.append("\tnode [shape = circle, style=solid];\n")
-    for (sourceState in internals.getSourceStates()) {
-        for (transition in internals.getTransitionsForSourceState(sourceState)!!) {
+    for (sourceState in internals.transitions.keys) {
+        for (transition in internals.transitions[sourceState]!!) {
             output.append("\t").append(sourceState).append(" -> ").append(transition.destinationState)
             output.append(" [ label = \"").append(transition.conditions).append("\" ]")
             output.append(";\n")

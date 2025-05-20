@@ -35,25 +35,25 @@ import java.util.*
  * for the current state, or having the state machine trigger actions that
  * change the user code state.
  *
- *
- * @param <T> State type. Each state should have a single instance of this type.
+ * @param T State type. Each state should have a single instance of this type.
  * An enum is a good fit.
- * @param <E> Event type. Events come into the state machine from the outside
+ * @param E Event type. Events come into the state machine from the outside
  * world, and are used to trigger state transitions.
- * @param <P> Priority type. Will be used to give priorities to transitions.
+ * @param P Priority type. Will be used to give priorities to transitions.
  * Enums and Integers are useful here.
  */
-class StateMachine<T, E, P : Comparable<P>> {
-    private val startStates = mutableSetOf<T>()
-    private val endStates = mutableSetOf<T>()
+class StateMachine<T, E, P : Comparable<P>>(
+    val startStates: Set<T>,
+    val endStates: Set<T>,
+    val exitEvents: Map<T, List<Action>>,
+    val entryEvents: Map<T, List<Action>>,
+    val transitions: Map<T, PriorityQueue<Transition<T, E, P>>>
+) {
 
     /**
      * @return a set of all active states.
      */
-    val activeStates =mutableSetOf<T>()
-    private val exitEvents = mutableMapOf<T, Actions>()
-    private val entryEvents = mutableMapOf<T, Actions>()
-    private val transitions= mutableMapOf<T, Queue<Transition<T, E, P>>>()
+    val activeStates = mutableSetOf<T>()
 
     /**
      * Create a new, empty state machine. To fill it, use the internals, or use
@@ -61,6 +61,7 @@ class StateMachine<T, E, P : Comparable<P>> {
      */
     init {
         log.debug("New Machine")
+        reset()
     }
 
     /**
@@ -97,8 +98,8 @@ class StateMachine<T, E, P : Comparable<P>> {
         log.debug("handle event {}", event)
 
         for (sourceState in activeStates) {
-            for (transition in findTransitionsForState(sourceState)!!) {
-                transition.conditions.handleEvent(event)
+            for (transition in transitions[sourceState]!!) {
+                transition.conditions.forEach { t -> t.handleEvent(event) }
             }
         }
         poll()
@@ -140,14 +141,14 @@ class StateMachine<T, E, P : Comparable<P>> {
 
             for (sourceState in activeStates) {
                 var firingPriority: P? = null
-                for (transition in findTransitionsForState(sourceState)!!) {
+                for (transition in transitions[sourceState]!!) {
                     if (!transitionsThatHaveFiredBefore.contains(transition)) {
                         if (firingPriority != null && transition.priority != firingPriority) {
                             // We reached a lower prio while higher prio transitions are firing.
                             // Don't consider these anymore, go to the next source state.
                             break
                         }
-                        if (transition.conditions.isMet) {
+                        if (transition.conditions.all { c -> c.isMet }) {
                             statesToExit.add(sourceState)
                             transitionsToFire.add(transition)
                             statesToEnter.add(transition.destinationState)
@@ -171,8 +172,8 @@ class StateMachine<T, E, P : Comparable<P>> {
         } while (stillNewTransitionsFiring)
     }
 
-    private fun executeActions(actions: Actions?) {
-        actions?.execute()
+    private fun executeActions(actions: List<Action>?) {
+        actions?.forEach { a -> a.execute() }
     }
 
     private fun exitState(state: T) {
@@ -201,12 +202,8 @@ class StateMachine<T, E, P : Comparable<P>> {
 
     private fun resetTransitions(sourceState: T) {
         transitions[sourceState]?.forEach { transition ->
-            transition.conditions.reset()
+            transition.conditions.forEach { c -> c.reset() }
         }
-    }
-
-    private fun findTransitionsForState(sourceState: T): Queue<Transition<T, E, P>>? {
-        return transitions[sourceState]
     }
 
     private fun executeExitActions(state: T?) {
@@ -215,75 +212,6 @@ class StateMachine<T, E, P : Comparable<P>> {
 
     private fun executeEntryActions(state: T?) {
         executeActions(entryEvents[state])
-    }
-
-    /**
-     * Gives access to the internals of the state machine.
-     */
-    inner class Internals {
-        fun getEndStates(): Set<T> = this@StateMachine.endStates
-        fun getStartStates(): Set<T> = this@StateMachine.startStates
-        fun getSourceStates(): Set<T> = this@StateMachine.transitions.keys
-
-        /**
-         * @return the outgoing transitions for a source state.
-         */
-        fun getTransitionsForSourceState(sourceState: T): Queue<Transition<T, E, P>>? {
-            return this@StateMachine.findTransitionsForState(sourceState)
-        }
-
-        // TODO complete meta information
-        /**
-         * Add 0 or more actions to be executed when the state is exited.
-         */
-        fun addExitActions(state: T, vararg action: Action) {
-            log.debug("Create exit action for '{}' ({}) ", state, action)
-            exitEvents.computeIfAbsent(state) { t -> Actions() }.add(*action)
-        }
-
-        /**
-         * Add 0 or more actions to be executed when the state is entered.
-         */
-        fun addEntryActions(state: T, vararg action: Action) {
-            log.debug("Create entry action for '{}' ({}) ", state, action)
-            entryEvents.computeIfAbsent(state) { t -> Actions() }.add(*action)
-        }
-
-        /**
-         * Add an end state.
-         */
-        fun addEndState(endState: T) {
-            log.debug("Add end state '{}'", endState)
-            endStates.add(endState)
-        }
-
-        /**
-         * Add a transition.
-         */
-        fun addTransition(transition: Transition<T, E, P>) {
-            val sourceState = transition.sourceState
-            log.debug(
-                "Create transition from '{}' to '{}' (pre: '{}', action: '{}')", sourceState,
-                transition.destinationState, transition.conditions, transition.actions
-            )
-            transitions.computeIfAbsent(sourceState) { e -> PriorityQueue() }
-                .add(transition)
-        }
-
-        /**
-         * Adds a start state, and immediately activates it.
-         */
-        fun addStartState(startState: T) {
-            log.debug("Add start state '{}'", startState)
-            startStates.add(startState)
-            activeStates.add(startState)
-        }
-
-        val stateMachine: StateMachine<T, E, P>
-            /**
-             * @return the statemachine whose internals these are.
-             */
-            get() = this@StateMachine
     }
 
     companion object {

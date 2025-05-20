@@ -15,9 +15,9 @@ package com.laamella.kode_state_machine
 class Transition<T, E, P : Comparable<P>>(
     val sourceState: T,
     val destinationState: T,
-    val conditions: Conditions<E>,
+    val conditions: List<Condition<E>>,
     val priority: P,
-    val actions: Actions
+    val actions: List<Action>
 ) : Comparable<Transition<T, E, P>> {
     /**
      * Compares transitions on their priorities.

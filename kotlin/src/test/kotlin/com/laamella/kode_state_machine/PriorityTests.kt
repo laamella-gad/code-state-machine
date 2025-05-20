@@ -49,7 +49,7 @@ internal class PriorityTests {
 
     @Test
     fun equalPriosFireTogether() {
-        val machine = stateMachine<SimpleState, Any, Priority>(NORMAL) {
+        val machine = machineBuilder.more {
             state(A) { transitionsTo(B, priority = HIGH, action = trace("H")) }
             state(A) { transitionsTo(B, priority = HIGH, action = trace("H")) }
             state(A) { transitionsTo(B, priority = LOWEST, action = trace("L")) }

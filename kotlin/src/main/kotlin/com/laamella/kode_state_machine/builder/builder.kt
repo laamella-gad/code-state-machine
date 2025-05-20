@@ -2,18 +2,14 @@ package com.laamella.kode_state_machine.builder
 
 import com.laamella.kode_state_machine.Action
 import com.laamella.kode_state_machine.Condition
-import com.laamella.kode_state_machine.Conditions
 import com.laamella.kode_state_machine.StateMachine
+import com.laamella.kode_state_machine.Transition
 import com.laamella.kode_state_machine.action.LogAction
-import com.laamella.kode_state_machine.builder.SimpleState.*
-import com.laamella.kode_state_machine.condition.AfterCondition
-import com.laamella.kode_state_machine.condition.AlwaysCondition
-import com.laamella.kode_state_machine.condition.MultiEventMatchCondition
-import com.laamella.kode_state_machine.condition.NeverCondition
-import com.laamella.kode_state_machine.condition.SingleEventMatchCondition
+import com.laamella.kode_state_machine.condition.*
+import java.util.*
 
 class StateMachineBuilder<T, E, P : Comparable<P>>(private val defaultPriority: P) {
-    val stateBuilders = arrayListOf<StateBuilder<T, E, P>>()
+    val stateBuilders = mutableListOf<StateBuilder<T, E, P>>()
 
     fun state(state: T, init: StateBuilder<T, E, P> .() -> Unit): StateBuilder<T, E, P> {
         return states(state, init = init)
@@ -27,7 +23,24 @@ class StateMachineBuilder<T, E, P : Comparable<P>>(private val defaultPriority: 
     }
 
     fun build(): StateMachine<T, E, P> {
-        return StateMachine()
+        val startStates = mutableSetOf<T>()
+        val endStates = mutableSetOf<T>()
+        val exitEvents = mutableMapOf<T, MutableList<Action>>()
+        val entryEvents = mutableMapOf<T, MutableList<Action>>()
+        val transitions = mutableMapOf<T, PriorityQueue<Transition<T, E, P>>>()
+
+        stateBuilders.forEach { sb ->
+            sb.build(
+                startStates,
+                endStates,
+                exitEvents,
+                entryEvents,
+                transitions,
+                defaultPriority
+            )
+        }
+
+        return StateMachine(startStates, endStates, exitEvents, entryEvents, transitions)
     }
 
     fun more(more: StateMachineBuilder<T, E, P>.() -> Unit): StateMachineBuilder<T, E, P> {
@@ -36,22 +49,70 @@ class StateMachineBuilder<T, E, P : Comparable<P>>(private val defaultPriority: 
     }
 }
 
-class StateBuilder<T, E, P : Comparable<P>>(vararg states: T) {
+class TransitionBuilder<T, E, P : Comparable<P>>(
+    private val to: List<T>,
+    private val condition: Condition<E>,
+    private val action: Action,
+    private val priority: P?
+) {
+    fun build(from: T, defaultPriority: P): List<Transition<T, E, P>> {
+        // TODO listof!
+        return to.map { t ->
+            Transition(
+                from,
+                t,
+                listOf(condition),
+                priority ?: defaultPriority,
+                listOf(action)
+            )
+        }
+    }
+}
+
+private class NoAction : Action {
+    override fun execute() {
+    }
+}
+
+class StateBuilder<T, E, P : Comparable<P>>(vararg sourceStates: T) {
+    private val sourceStates = mutableSetOf(*sourceStates)
+    internal var isStartState = false
+    private var isEndState = false
+    private val exitEvents = mutableListOf<Action>()
+    private val entryEvents = mutableListOf<Action>()
+    private val transitions = mutableListOf<TransitionBuilder<T, E, P>>()
+
     fun transitionsTo(
         vararg to: T,
         condition: Condition<E> = AlwaysCondition(),
-        action: Action? = null,
+        action: Action = NoAction(),
         priority: P? = null
     ) {
-        TODO("Not yet implemented")
+        transitions.add(TransitionBuilder(to.asList(), condition, action, priority))
     }
 
     fun areStartStates() {
-        TODO("Not yet implemented")
+        isStartState = true
     }
 
     fun areEndStates() {
+        isEndState = true
+    }
 
+    fun isAStartState() {
+        areStartStates()
+    }
+
+    fun isAnEndState() {
+        areEndStates()
+    }
+
+    fun onExit(action: Action) {
+        exitEvents.add(action)
+    }
+
+    fun onEntry(action: Action) {
+        entryEvents.add(action)
     }
 
     fun <E> always(): Condition<E> {
@@ -66,27 +127,40 @@ class StateBuilder<T, E, P : Comparable<P>>(vararg states: T) {
         return AfterCondition(milliseconds)
     }
 
-    fun <E> isEvent(vararg events: E): Conditions<E> {
+    fun <E> isEvent(vararg events: E): Condition<E> {
         assert(events.isNotEmpty())
 
         if (events.size == 1) {
-            val singleEvent: E = events[0]
-            return Conditions(SingleEventMatchCondition(singleEvent))
+            return SingleEventMatchCondition(events[0])
         }
 
-        return Conditions(MultiEventMatchCondition(*events))
+        return MultiEventMatchCondition(*events)
     }
 
     fun log(logText: String): Action {
         return LogAction(logText)
     }
 
-    fun isAStartState() {
-        areStartStates()
+    fun except(vararg states: T) {
+        sourceStates.removeAll(states)
     }
 
-    fun isAnEndState() {
-        areEndStates()
+    fun build(
+        startStates: MutableSet<T>,
+        endStates: MutableSet<T>,
+        entryEvents: MutableMap<T, MutableList<Action>>,
+        exitEvents: MutableMap<T, MutableList<Action>>,
+        transitions: MutableMap<T, PriorityQueue<Transition<T, E, P>>>,
+        defaultPriority: P
+    ) {
+        sourceStates.forEach { ss ->
+            if (isStartState) startStates.add(ss)
+            if (isEndState) endStates.add(ss)
+            entryEvents.computeIfAbsent(ss) { t -> mutableListOf() }.addAll(this.entryEvents)
+            exitEvents.computeIfAbsent(ss) { t -> mutableListOf() }.addAll(this.exitEvents)
+            transitions.computeIfAbsent(ss) { t -> PriorityQueue<Transition<T, E, P>>() }
+                .addAll(this.transitions.flatMap { t -> t.build(ss, defaultPriority) })
+        }
     }
 }
 
@@ -98,16 +172,3 @@ fun <T, E, P : Comparable<P>> stateMachine(
     stateMachine.init()
     return stateMachine
 }
-
-enum class SimpleState { A, B, C, D }
-
-val x = stateMachine<SimpleState, Any, Int>(0) {
-    states(A, B) {
-        areStartStates()
-        transitionsTo(C)
-        transitionsTo(C, condition = never(), action = log("gwrgw"), priority = 5)
-    }
-    states(C, D) {
-        areEndStates()
-    }
-}.build()
