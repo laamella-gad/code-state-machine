@@ -1,25 +1,21 @@
 package com.laamella.kode_state_machine
 
-import com.laamella.kode_state_machine.builder.DslStateMachineBuilder
+import com.laamella.kode_state_machine.builder.StateMachineBuilder
+import com.laamella.kode_state_machine.builder.stateMachine
 import com.laamella.kode_state_machine.priority.Priority
+import com.laamella.kode_state_machine.priority.Priority.*
 import com.laamella.kode_state_machine.util.SimpleState
+import com.laamella.kode_state_machine.util.SimpleState.A
+import com.laamella.kode_state_machine.util.SimpleState.B
 import org.junit.jupiter.api.Assertions
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
 internal class PriorityTests {
     private val trace = StringBuffer()
 
-    private var machine: StateMachine<SimpleState, Any, Priority>? = null
-
-    @BeforeEach
-    fun before() {
-        machine = object : DslStateMachineBuilder<SimpleState, Any, Priority>(Priority.NORMAL) {
-            override fun executeBuildInstructions() {
-                state(SimpleState.A).isAStartState()
-                state(SimpleState.B).isAnEndState()
-            }
-        }.build()
+    private var machineBuilder: StateMachineBuilder<SimpleState, Any, Priority> = stateMachine(NORMAL) {
+        state(A) { isAStartState() }
+        state(B) { isAnEndState() }
     }
 
     private fun trace(signature: String): TraceAction {
@@ -28,54 +24,38 @@ internal class PriorityTests {
 
     @Test
     fun highPrioIsTheOnlyOneFiring() {
-        object : DslStateMachineBuilder<SimpleState, Any, Priority>(Priority.NORMAL) {
-            override fun executeBuildInstructions() {
-                state(SimpleState.A).`when`(always())
-                    .transition(SimpleState.B, always(), Priority.HIGH, trace("H"))
-                state(SimpleState.A).`when`(always())
-                    .transition(SimpleState.B, always(), Priority.NORMAL, trace("N"))
-                state(SimpleState.A).`when`(always())
-                    .transition(SimpleState.B, always(), Priority.LOWEST, trace("L"))
-            }
-        }.build(machine!!)
+        val machine = machineBuilder.more {
+            state(A) { transitionsTo(B, priority = HIGH, action = trace("H")) }
+            state(A) { transitionsTo(B, priority = NORMAL, action = trace("N")) }
+            state(A) { transitionsTo(B, priority = LOWEST, action = trace("L")) }
+        }.build()
 
-        machine!!.poll()
+        machine.poll()
         Assertions.assertEquals("H", trace.toString())
     }
 
     @Test
     fun normalPriosAreTheOnlyOnesFiringBecauseOtherPrioDoesntMeetCondition() {
-        object : DslStateMachineBuilder<SimpleState, Any, Priority>(Priority.NORMAL) {
-            override fun executeBuildInstructions() {
-                state(SimpleState.A).`when`(always())
-                    .transition(SimpleState.B, never(), Priority.HIGH, trace("H"))
-                state(SimpleState.A).`when`(always())
-                    .transition(SimpleState.B, never(), Priority.NORMAL, trace("N"))
-                state(SimpleState.A).`when`(always())
-                    .transition(SimpleState.B, always(), Priority.NORMAL, trace("N"))
-                state(SimpleState.A).`when`(always())
-                    .transition(SimpleState.B, always(), Priority.NORMAL, trace("N"))
-            }
-        }.build(machine!!)
+        val machine = machineBuilder.more {
+            state(A) { transitionsTo(B, condition = never(), priority = HIGH, action = trace("H")) }
+            state(A) { transitionsTo(B, condition = never(), action = trace("N")) }
+            state(A) { transitionsTo(B, action = trace("N")) }
+            state(A) { transitionsTo(B, action = trace("N")) }
+        }.build()
 
-        machine!!.poll()
+        machine.poll()
         Assertions.assertEquals("NN", trace.toString())
     }
 
     @Test
     fun equalPriosFireTogether() {
-        object : DslStateMachineBuilder<SimpleState, Any, Priority>(Priority.NORMAL) {
-            override fun executeBuildInstructions() {
-                state(SimpleState.A).`when`(always())
-                    .transition(SimpleState.B, always(), Priority.HIGH, trace("H"))
-                state(SimpleState.A).`when`(always())
-                    .transition(SimpleState.B, always(), Priority.HIGH, trace("H"))
-                state(SimpleState.A).`when`(always())
-                    .transition(SimpleState.B, always(), Priority.LOWEST, trace("L"))
-            }
-        }.build(machine!!)
+        val machine = stateMachine<SimpleState, Any, Priority>(NORMAL) {
+            state(A) { transitionsTo(B, priority = HIGH, action = trace("H")) }
+            state(A) { transitionsTo(B, priority = HIGH, action = trace("H")) }
+            state(A) { transitionsTo(B, priority = LOWEST, action = trace("L")) }
+        }.build()
 
-        machine!!.poll()
+        machine.poll()
         Assertions.assertEquals("HH", trace.toString())
     }
 }
