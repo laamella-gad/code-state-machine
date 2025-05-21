@@ -1,8 +1,9 @@
 package com.laamella.kode_state_machine
 
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
+import io.github.oshai.kotlinlogging.KotlinLogging
 import java.util.*
+
+private val logger = KotlinLogging.logger {}
 
 /**
  * A programmer friendly state machine.
@@ -21,12 +22,12 @@ import java.util.*
  *  * Its code is written in a straightforward way, and is hopefully easy to
  * understand.
  *  * It has a priority system for transitions.
- *  * It does not have sub state machines; a state machine is not a state.
+ *  * It does not have substate machines; a state machine is not a state.
  *  * It has transitions that use a state machine for their condition.
  *  * With the DSL, transitions to a certain state can be added for multiple
  * source states, thereby faking global transitions.
  *  * It tries to put as few constraints as possible on the user.
- *  * It has only one dependency: slf4j for logging, which can be configured to
+ *  * It has only one dependency: kotlin-logging-jvm for logging, which can be configured to
  * use any other logging framework.
  *  * The state type can be anything.
  *  * The event type can be anything.
@@ -60,7 +61,7 @@ class StateMachine<T, E, P : Comparable<P>>(
      * one of the builders.
      */
     init {
-        log.debug("New Machine")
+        logger.debug { "New Machine" }
         reset()
     }
 
@@ -68,9 +69,9 @@ class StateMachine<T, E, P : Comparable<P>>(
      * Resets all active states to the start states.
      */
     fun reset() {
-        log.debug("reset()")
+        logger.debug { "reset()" }
         if (startStates.isEmpty()) {
-            log.warn("State machine does not contain any start states.")
+            logger.warn { "State machine does not contain any start states." }
         }
         activeStates.clear()
         for (startState in startStates) {
@@ -95,7 +96,7 @@ class StateMachine<T, E, P : Comparable<P>>(
      * @param event some event that has happened.
      */
     fun handleEvent(event: E) {
-        log.debug("handle event {}", event)
+        logger.debug { "handle event $event" }
 
         for (sourceState in activeStates) {
             for (transition in transitions[sourceState]!!) {
@@ -177,7 +178,7 @@ class StateMachine<T, E, P : Comparable<P>>(
     }
 
     private fun exitState(state: T) {
-        log.debug("exit state {}", state)
+        logger.debug { "exit state $state" }
         if (activeStates.contains(state)) {
             executeExitActions(state)
             activeStates.remove(state)
@@ -186,15 +187,15 @@ class StateMachine<T, E, P : Comparable<P>>(
 
     private fun enterState(newState: T) {
         if (endStates.contains(newState)) {
-            log.debug("enter end state {}", newState)
+            logger.debug {"enter end state $newState"}
             executeEntryActions(newState)
             if (activeStates.isEmpty()) {
-                log.debug("machine is finished")
+                logger.debug {"machine is finished"}
             }
             return
         }
         if (activeStates.add(newState)) {
-            log.debug("enter state {}", newState)
+            logger.debug {"enter state $newState"}
             executeEntryActions(newState)
             resetTransitions(newState)
         }
@@ -212,9 +213,5 @@ class StateMachine<T, E, P : Comparable<P>>(
 
     private fun executeEntryActions(state: T?) {
         executeActions(entryEvents[state])
-    }
-
-    companion object {
-        private val log: Logger = LoggerFactory.getLogger(StateMachine::class.java)
     }
 }

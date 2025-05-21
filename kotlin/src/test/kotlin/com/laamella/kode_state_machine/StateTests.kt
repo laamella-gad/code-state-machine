@@ -7,9 +7,10 @@ import com.laamella.kode_state_machine.builder.stateMachine
 import com.laamella.kode_state_machine.io.dotOutput
 import com.laamella.kode_state_machine.priority.Priority
 import com.laamella.kode_state_machine.priority.Priority.NORMAL
+import io.github.oshai.kotlinlogging.KotlinLogging
 import org.junit.jupiter.api.Test
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
+
+private val logger = KotlinLogging.logger {}
 
 class StateTests {
     fun testMachine(): StateMachine<GameState, GameEvent, Priority> {
@@ -49,7 +50,7 @@ class StateTests {
             }
             state(EXIT) { isAnEndState() }
         }.build()
-        log.trace("\n" + dotOutput(gameMachine))
+        logger.trace{"\n" + dotOutput(gameMachine)}
         return gameMachine
     }
 
@@ -102,9 +103,5 @@ class StateTests {
         gameMachine.handleEvent(DONE)
         gameMachine.reset()
         assertActive(gameMachine, LOADER)
-    }
-
-    companion object {
-        private val log: Logger = LoggerFactory.getLogger(StateTests::class.java)
     }
 }

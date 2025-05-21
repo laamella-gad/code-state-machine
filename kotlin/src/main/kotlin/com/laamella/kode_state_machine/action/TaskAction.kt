@@ -15,6 +15,7 @@ abstract class TaskAction<E> : Runnable, FinishableAction<E> {
     private var finishedCondition: NonEventBasedCondition<E>? = null
 
     override fun execute() {
+        // TODO use coroutines
         val taskThread = Thread(this)
         finishedCondition = object : NonEventBasedCondition<E>() {
             override val isMet: Boolean

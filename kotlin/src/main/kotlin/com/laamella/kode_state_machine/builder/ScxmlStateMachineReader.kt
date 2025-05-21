@@ -4,12 +4,14 @@ import com.laamella.kode_state_machine.*
 import com.laamella.kode_state_machine.action.NoAction
 import com.laamella.kode_state_machine.condition.AlwaysCondition
 import com.laamella.kode_state_machine.priority.PriorityDeterminizer
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
+import io.github.oshai.kotlinlogging.KotlinLogging
 import org.w3c.dom.Element
 import org.w3c.dom.Node
+import org.w3c.dom.NodeList
 import org.xml.sax.InputSource
 import javax.xml.parsers.DocumentBuilderFactory
+
+private val logger = KotlinLogging.logger {}
 
 /**
  * A State machine builder that attempts to read the [SCXML](http://www.w3.org/TR/scxml/) format. Since many features are
@@ -54,9 +56,7 @@ class ScxmlStateMachineReader<T, E>(
         val stateName = stateElement.getAttribute(ID_ATTRIBUTE)
         val state = interpretStateName(stateName)
 
-        val childNodes = stateElement.childNodes
-        for (i in 0..<childNodes.length) {
-            val subNode = childNodes.item(i)
+        stateElement.childNodes.forEach { subNode ->
             if (subNode.nodeType == Node.ELEMENT_NODE) {
                 val subElement = subNode as Element
                 val subNodeName = subElement.nodeName
@@ -88,7 +88,7 @@ class ScxmlStateMachineReader<T, E>(
                             }
                         }
                     } else {
-                        log.warn("State $stateName has a transition going nowhere.")
+                        logger.warn{"State $stateName has a transition going nowhere."}
                     }
 
                     "onentry" -> builder.more { state(state) { onEntry(interpretEvent(subNode.textContent)) } }
@@ -100,8 +100,6 @@ class ScxmlStateMachineReader<T, E>(
     }
 
     companion object {
-        private val log: Logger = LoggerFactory.getLogger(ScxmlStateMachineReader::class.java)
-
         private const val TRANSITION_ELEMENT = "transition"
         private const val PARALLEL_ELEMENT = "parallel"
         private const val CONDITION_ATTRIBUTE = "cond"
@@ -113,4 +111,11 @@ class ScxmlStateMachineReader<T, E>(
         private const val STATE_ELEMENT = "state"
         private const val FINAL_STATE_ELEMENT = "final"
     }
+}
+
+fun NodeList.forEach(action: (Node) -> Unit) {
+    (0 until this.length)
+        .asSequence()
+        .map { this.item(it) }
+        .forEach { action(it) }
 }
