@@ -1,6 +1,8 @@
 package com.laamella.kode_state_machine.builder
 
 import com.laamella.kode_state_machine.*
+import com.laamella.kode_state_machine.action.NoAction
+import com.laamella.kode_state_machine.condition.AlwaysCondition
 import com.laamella.kode_state_machine.priority.PriorityDeterminizer
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -23,7 +25,12 @@ import javax.xml.parsers.DocumentBuilderFactory
  * | ✗     | executable content      |
  * | ✗     | parallel states (treated as normal states)      |
  */
-abstract class ScxmlStateMachineBuilder<T, E>(private val inputSource: InputSource) {
+class ScxmlStateMachineReader<T, E>(
+    private val inputSource: InputSource,
+    private val interpretEvent: (attribute: String) -> Action,
+    private val interpretCondition: (attribute: String) -> Condition<E>,
+    private val interpretStateName: (name: String) -> T
+) {
     private val documentBuilderFactory: DocumentBuilderFactory = DocumentBuilderFactory.newInstance()
 
     fun build(newMachine: StateMachineBuilder<T, E, Int>) {
@@ -59,46 +66,41 @@ abstract class ScxmlStateMachineBuilder<T, E>(private val inputSource: InputSour
                     TRANSITION_ELEMENT -> if (subElement.hasAttribute(TARGET_ATTRIBUTE)) {
                         val targetState = interpretStateName(subElement.getAttribute(TARGET_ATTRIBUTE))
 
-                        val conditions = Conditions<E>()
+                        var conditions: Condition<E> = AlwaysCondition()
                         if (subElement.hasAttribute(CONDITION_ATTRIBUTE)) {
-                            conditions.add(interpretCondition(subElement.getAttribute(CONDITION_ATTRIBUTE)))
+                            conditions = interpretCondition(subElement.getAttribute(CONDITION_ATTRIBUTE))
                         }
 
-                        val actions = Actions()
+                        var actions: Action = NoAction()
                         if (subElement.hasAttribute(EVENT_ATTRIBUTE)) {
-                            actions.add(interpretEvent(subElement.getAttribute(EVENT_ATTRIBUTE)))
+                            actions = interpretEvent(subElement.getAttribute(EVENT_ATTRIBUTE))
                         }
 
                         // TODO do something about priorities
-                        builder.addTransition(
-                            Transition(
-                                state,
-                                targetState,
-                                conditions,
-                                PriorityDeterminizer.nextPriority(),
-                                actions
-                            )
-                        )
+                        builder.more {
+                            state(state) {
+                                transitionsTo(
+                                    targetState,
+                                    condition = conditions,
+                                    action = actions,
+                                    priority = PriorityDeterminizer.nextPriority(),
+                                )
+                            }
+                        }
                     } else {
                         log.warn("State $stateName has a transition going nowhere.")
                     }
 
-                    "onentry" -> builder.addEntryActions(state, interpretEvent(subNode.textContent))
-                    "onexit" -> builder.addExitActions(state, interpretEvent(subNode.textContent))
+                    "onentry" -> builder.more { state(state) { onEntry(interpretEvent(subNode.textContent)) } }
+                    "onexit" -> builder.more { state(state) { onExit(interpretEvent(subNode.textContent)) } }
                 }
             }
         }
         return state
     }
 
-    protected abstract fun interpretEvent(attribute: String): Action
-
-    protected abstract fun interpretCondition(attribute: String): Condition<E>
-
-    protected abstract fun interpretStateName(name: String): T
-
     companion object {
-        private val log: Logger = LoggerFactory.getLogger(ScxmlStateMachineBuilder::class.java)
+        private val log: Logger = LoggerFactory.getLogger(ScxmlStateMachineReader::class.java)
 
         private const val TRANSITION_ELEMENT = "transition"
         private const val PARALLEL_ELEMENT = "parallel"

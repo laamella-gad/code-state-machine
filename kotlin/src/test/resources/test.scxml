@@ -1,31 +1,61 @@
-<scxml id="SCXML" initial="start" xmlns="http://www.w3.org/2005/07/scxml"><!--   node-size-and-position x=0.0 y=0.0 w=243.0 h=426.0  -->
- <final id="DAG"><!--   node-size-and-position x=203.0 y=249.5 w=20.0 h=20.0  --></final>
- <state id="A"><!--   node-size-and-position x=112.0 y=113.0 w=10.0 h=20.0  -->
-  <onentry>enter A</onentry>
-  <onexit>exit A</onexit>
-  <transition cond="when start biking" event="get bike" target="DAG"><!--   edge-path [DAG]  pointx=0.0 pointy=0.0 offsetx=0.0 offsety=-15.0  --></transition>
-  <transition target="CLUSTER"></transition>
-  <transition target="B"><!--   edge-path [B]  pointx=0.0 pointy=0.0 offsetx=0.0 offsety=-12.0  --></transition>
- </state>
- <parallel id="B"><!--   node-size-and-position x=20.0 y=249.5 w=10.0 h=20.0  -->
-  <transition><!--   edge-path [B]  x=30.0 y=10.0  --></transition>
-  <transition cond="always" event="log(poep)"><!--   edge-path [B]  x=50.0 y=10.0  --></transition>
- </parallel>
- <final id="C"><!--   node-size-and-position x=111.0 y=386.0 w=10.0 h=20.0  --></final>
- <state id="start"><!--   node-size-and-position x=97.0 y=43.0 w=40.0 h=20.0  -->
-  <onexit>poep</onexit>
-<!-- comments -->
-  <transition cond="condition" event="event" target="A">executable content</transition>
- </state>
-<!-- hello -->
- <state id="CLUSTER" initial="new_node28"><!--   node-size-and-position x=61.0 y=183.0 w=110.0 h=153.0  -->
-  <onentry>in</onentry>
-  <onexit>out</onexit>
-  <state id="new_node26"><!--   node-size-and-position x=20.0 y=113.0 w=70.0 h=20.0  -->
-   <transition target="C"></transition>
-  </state>
-  <state id="new_node28"><!--   node-size-and-position x=20.0 y=43.0 w=70.0 h=20.0  -->
-   <transition target="new_node26"></transition>
-  </state>
- </state>
+<scxml id="SCXML" initial="start" xmlns="http://www.w3.org/2005/07/scxml" xmlns:viz="http://phrogz.net/visual-scxml">
+	<!--   node-size-and-position x=0.0 y=0.0 w=243.0 h=426.0  -->
+	<final id="DAG" viz:xywh="80 -320 120 40">
+		<!--   node-size-and-position x=203.0 y=249.5 w=20.0 h=20.0  -->
+	</final>
+	<state id="A" viz:xywh="280 -320 120 40">
+		<!--   node-size-and-position x=112.0 y=113.0 w=10.0 h=20.0  -->
+		<onentry><![CDATA[
+			enter A
+		]]></onentry>
+		<onexit><![CDATA[
+			exit A
+		]]></onexit>
+		<transition cond="when start biking" event="get bike" target="DAG">
+			<!--   edge-path [DAG]  pointx=0.0 pointy=0.0 offsetx=0.0 offsety=-15.0  -->
+		</transition>
+		<transition target="CLUSTER"/>
+		<transition target="B">
+			<!--   edge-path [B]  pointx=0.0 pointy=0.0 offsetx=0.0 offsety=-12.0  -->
+		</transition>
+	</state>
+	<parallel id="B" viz:xywh="700 -170 120 40">
+		<!--   node-size-and-position x=20.0 y=249.5 w=10.0 h=20.0  -->
+		<transition cond="always" event="log(blabla)" target="endstate">
+			<!--   edge-path [B]  x=50.0 y=10.0  -->
+		</transition>
+	</parallel>
+	<final id="C" viz:xywh="500 80 120 40">
+		<!--   node-size-and-position x=111.0 y=386.0 w=10.0 h=20.0  -->
+    <transition target="endstate"/>
+	</final>
+	<state id="start" viz:xywh="270 -450 120 40">
+		<!--   node-size-and-position x=97.0 y=43.0 w=40.0 h=20.0  -->
+		<onexit><![CDATA[
+			bla
+		]]></onexit>
+		<!-- comments -->
+		<transition cond="condition" event="event" target="A"><![CDATA[
+			executable content
+		]]></transition>
+	</state>
+	<!-- hello -->
+	<state id="CLUSTER" initial="new_node28" viz:xywh="270 -40 160 170">
+		<!--   node-size-and-position x=61.0 y=183.0 w=110.0 h=153.0  -->
+		<onentry><![CDATA[
+			in
+		]]></onentry>
+		<onexit><![CDATA[
+			out
+		]]></onexit>
+		<state id="new_node26" viz:xywh="290 -10 120 40">
+			<!--   node-size-and-position x=20.0 y=113.0 w=70.0 h=20.0  -->
+			<transition target="C"/>
+		</state>
+		<state id="new_node28" viz:xywh="290 70 120 40">
+			<!--   node-size-and-position x=20.0 y=43.0 w=70.0 h=20.0  -->
+			<transition target="new_node26"/>
+		</state>
+	</state>
+	<state id="endstate" viz:xywh="280 270 120 40"/>
 </scxml>
