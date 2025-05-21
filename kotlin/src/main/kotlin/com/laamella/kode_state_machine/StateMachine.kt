@@ -36,6 +36,13 @@ private val logger = KotlinLogging.logger {}
  * for the current state, or having the state machine trigger actions that
  * change the user code state.
  *
+ * StateMachineBuilder is a DSL for constructing this StateMachine.
+ *
+ * @param startStates all the states that are start states
+ * @param endStates all the states that are end states
+ * @param exitEvents contains the events to be triggered when a certain state is exited
+ * @param entryEvents contains the events to be triggered when a certain state is entered
+ * @param transitions all the transitions that start on a certain source state.
  * @param T State type. Each state should have a single instance of this type.
  * An enum is a good fit.
  * @param E Event type. Events come into the state machine from the outside
@@ -50,23 +57,18 @@ class StateMachine<T, E, P : Comparable<P>>(
     val entryEvents: Map<T, List<Action>>,
     val transitions: Map<T, PriorityQueue<Transition<T, E, P>>>
 ) {
-
     /**
      * @return a set of all active states.
      */
     val activeStates = mutableSetOf<T>()
 
-    /**
-     * Create a new, empty state machine. To fill it, use the internals, or use
-     * one of the builders.
-     */
     init {
         logger.debug { "New Machine" }
         reset()
     }
 
     /**
-     * Resets all active states to the start states.
+     * Resets all active states to the start states. Does not fire anything.
      */
     fun reset() {
         logger.debug { "reset()" }
@@ -74,33 +76,35 @@ class StateMachine<T, E, P : Comparable<P>>(
             logger.warn { "State machine does not contain any start states." }
         }
         activeStates.clear()
-        for (startState in startStates) {
-            enterState(startState)
-        }
+        startStates.forEach { state -> enterState(state) }
     }
 
     /**
      * @return whether the state is currently active.
      */
-    fun isActive(state: T): Boolean {
-        return activeStates.contains(state)
-    }
+    fun isActive(state: T) = activeStates.contains(state)
 
-    fun isFinished(): Boolean = activeStates.isEmpty()
+    /**
+     * @return whether the state machine is done (no more states are active).
+     */
+    fun isFinished() = activeStates.isEmpty()
 
     /**
      * Handle an event coming from the user application. After sending the event
      * to all transitions that have an active source state, poll() will be
-     * called.
+     * called to execute the transitions whose conditions have become met.
      *
      * @param event some event that has happened.
      */
     fun handleEvent(event: E) {
         logger.debug { "handle event $event" }
 
+        // Tell all conditions to handle the event. They will decide if they become "met"
         for (sourceState in activeStates) {
-            for (transition in transitions[sourceState]!!) {
-                transition.conditions.forEach { t -> t.handleEvent(event) }
+            for (transition in transitions[sourceState].orEmpty()) {
+                for (condition in transition.conditions) {
+                    condition.handleEvent(event)
+                }
             }
         }
         poll()
@@ -163,7 +167,7 @@ class StateMachine<T, E, P : Comparable<P>>(
                 exitState(stateToExit)
             }
             for (transitionToFire in transitionsToFire) {
-                executeActions(transitionToFire.actions)
+                transitionToFire.actions.forEach { a -> a.execute() }
                 transitionsThatHaveFiredBefore.add(transitionToFire)
                 stillNewTransitionsFiring = true
             }
@@ -171,10 +175,6 @@ class StateMachine<T, E, P : Comparable<P>>(
                 enterState(stateToEnter)
             }
         } while (stillNewTransitionsFiring)
-    }
-
-    private fun executeActions(actions: List<Action>?) {
-        actions?.forEach { a -> a.execute() }
     }
 
     private fun exitState(state: T) {
@@ -187,31 +187,31 @@ class StateMachine<T, E, P : Comparable<P>>(
 
     private fun enterState(newState: T) {
         if (endStates.contains(newState)) {
-            logger.debug {"enter end state $newState"}
+            logger.debug { "enter end state $newState" }
             executeEntryActions(newState)
             if (activeStates.isEmpty()) {
-                logger.debug {"machine is finished"}
+                logger.debug { "machine is finished" }
             }
             return
         }
         if (activeStates.add(newState)) {
-            logger.debug {"enter state $newState"}
+            logger.debug { "enter state $newState" }
             executeEntryActions(newState)
             resetTransitions(newState)
         }
     }
 
     private fun resetTransitions(sourceState: T) {
-        transitions[sourceState]?.forEach { transition ->
-            transition.conditions.forEach { c -> c.reset() }
-        }
+        transitions[sourceState]
+            ?.flatMap { transition -> transition.conditions }
+            ?.forEach { c -> c.reset() }
     }
 
-    private fun executeExitActions(state: T?) {
-        executeActions(exitEvents[state])
+    private fun executeExitActions(state: T) {
+        exitEvents[state]?.forEach { a -> a.execute() }
     }
 
-    private fun executeEntryActions(state: T?) {
-        executeActions(entryEvents[state])
+    private fun executeEntryActions(state: T) {
+        entryEvents[state]?.forEach { a -> a.execute() }
     }
 }

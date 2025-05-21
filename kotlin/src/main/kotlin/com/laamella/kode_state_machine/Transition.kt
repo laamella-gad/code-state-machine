@@ -26,14 +26,5 @@ class Transition<T, E, P : Comparable<P>>(
         return priority.compareTo(other.priority)
     }
 
-    override fun toString(): String {
-        return String.format(
-            "Transition from %s to %s, condition %s, action %s, priority %s",
-            sourceState,
-            destinationState,
-            conditions,
-            actions,
-            priority
-        )
-    }
+    override fun toString(): String = "Transition from $sourceState to $destinationState, condition $conditions, action $actions, priority $priority"
 }

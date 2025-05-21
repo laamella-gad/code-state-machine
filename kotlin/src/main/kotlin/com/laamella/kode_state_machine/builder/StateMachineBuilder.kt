@@ -5,6 +5,7 @@ import com.laamella.kode_state_machine.Condition
 import com.laamella.kode_state_machine.StateMachine
 import com.laamella.kode_state_machine.Transition
 import com.laamella.kode_state_machine.action.LogAction
+import com.laamella.kode_state_machine.action.NoAction
 import com.laamella.kode_state_machine.condition.*
 import java.util.*
 
@@ -66,11 +67,6 @@ class TransitionBuilder<T, E, P : Comparable<P>>(
                 listOf(action)
             )
         }
-    }
-}
-
-private class NoAction : Action {
-    override fun execute() {
     }
 }
 
