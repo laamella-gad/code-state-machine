@@ -31,14 +31,7 @@ class StateMachineBuilder<T, E, P : Comparable<P>>(private val defaultPriority: 
         val transitions = mutableMapOf<T, PriorityQueue<Transition<T, E, P>>>()
 
         stateBuilders.forEach { sb ->
-            sb.build(
-                startStates,
-                endStates,
-                exitEvents,
-                entryEvents,
-                transitions,
-                defaultPriority
-            )
+            sb.build(startStates, endStates, exitEvents, entryEvents, transitions, defaultPriority)
         }
 
         return StateMachine(startStates, endStates, exitEvents, entryEvents, transitions)
@@ -76,7 +69,7 @@ class StateBuilder<T, E, P : Comparable<P>>(vararg sourceStates: T) {
     private var isEndState = false
     private val exitEvents = mutableListOf<Action>()
     private val entryEvents = mutableListOf<Action>()
-    private val transitions = mutableListOf<TransitionBuilder<T, E, P>>()
+    private val transitionBuilders = mutableListOf<TransitionBuilder<T, E, P>>()
 
     fun transitionsTo(
         vararg to: T,
@@ -84,7 +77,14 @@ class StateBuilder<T, E, P : Comparable<P>>(vararg sourceStates: T) {
         action: Action = NoAction(),
         priority: P? = null
     ) {
-        transitions.add(TransitionBuilder(to.asList(), condition, action, priority))
+        transitionBuilders.add(TransitionBuilder(to.asList(), condition, action, priority))
+    }
+
+    fun transition(vararg states: T, init: TransitionBuilder<T, E, P> .() -> Unit): TransitionBuilder<T, E, P> {
+        val transitionBuilder = TransitionBuilder<T, E, P>(states.asList(), condition = always(), action = NoAction(), null)
+        transitionBuilders.add(transitionBuilder)
+        transitionBuilder.init()
+        return transitionBuilder
     }
 
     fun areStartStates() {
@@ -155,7 +155,7 @@ class StateBuilder<T, E, P : Comparable<P>>(vararg sourceStates: T) {
             entryEvents.computeIfAbsent(ss) { t -> mutableListOf() }.addAll(this.entryEvents)
             exitEvents.computeIfAbsent(ss) { t -> mutableListOf() }.addAll(this.exitEvents)
             transitions.computeIfAbsent(ss) { t -> PriorityQueue<Transition<T, E, P>>() }
-                .addAll(this.transitions.flatMap { t -> t.build(ss, defaultPriority) })
+                .addAll(this.transitionBuilders.flatMap { t -> t.build(ss, defaultPriority) })
         }
     }
 }
