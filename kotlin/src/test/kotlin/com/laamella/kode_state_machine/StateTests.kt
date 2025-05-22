@@ -14,14 +14,14 @@ private val logger = KotlinLogging.logger {}
 
 class StateTests {
     fun testMachine(): StateMachine<GameState, GameEvent, Priority> {
-        val gameMachine = stateMachine<GameState, GameEvent, Priority>(NORMAL) {
+        val gameMachine = stateMachine(NORMAL) {
             state(LOADER) {
                 onExit(log("exit!"))
                 onEntry(log("enter!"))
             }
             state(LOADER) {
                 isAStartState()
-                transitionsTo(INTRO, condition = isEvent(DONE), action = log("bing!"))
+                transition { to(INTRO); onEvent(DONE); action(log("bing!")) }
             }
             state(INTRO) { transitionsTo(MENU, condition = isEvent(DONE)) }
             state(MENU) {
@@ -42,15 +42,15 @@ class StateTests {
                 transitionsTo(MENU, condition = isEvent(ESCAPE))
             }
 
-            state(MENU) { transitionsTo(CONFIGURATION, condition = isEvent(FIRE_A, FIRE_B)) }
+            state(MENU) { transitionsTo(CONFIGURATION, condition = isEventOneOf(FIRE_A, FIRE_B)) }
 
             state(CONFIGURATION) {
-                transitionsTo(MENU, condition = isEvent(FIRE_A, FIRE_B))
+                transitionsTo(MENU, condition = isEventOneOf(FIRE_A, FIRE_B))
                 transitionsTo(INTRO, condition = isEvent(FIRE_A))
             }
             state(EXIT) { isAnEndState() }
         }.build()
-        logger.trace{"\n" + dotOutput(gameMachine)}
+        logger.trace { "\n" + dotOutput(gameMachine) }
         return gameMachine
     }
 

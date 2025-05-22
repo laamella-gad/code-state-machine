@@ -1,6 +1,6 @@
 package com.laamella.kode_state_machine.builder
 
-import com.laamella.kode_state_machine.action.LogAction
+import com.laamella.kode_state_machine.LogAction
 import com.laamella.kode_state_machine.condition.AlwaysCondition
 import com.laamella.kode_state_machine.io.dotOutput
 import org.junit.jupiter.api.Test

@@ -1,7 +1,9 @@
 package com.laamella.kode_state_machine.builder
 
-import com.laamella.kode_state_machine.*
-import com.laamella.kode_state_machine.action.NoAction
+import com.laamella.kode_state_machine.Action
+import com.laamella.kode_state_machine.Condition
+import com.laamella.kode_state_machine.NoAction
+import com.laamella.kode_state_machine.StateMachine
 import com.laamella.kode_state_machine.condition.AlwaysCondition
 import com.laamella.kode_state_machine.priority.PriorityDeterminizer
 import io.github.oshai.kotlinlogging.KotlinLogging

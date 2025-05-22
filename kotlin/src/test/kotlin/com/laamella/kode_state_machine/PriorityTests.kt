@@ -8,6 +8,7 @@ import com.laamella.kode_state_machine.util.SimpleState
 import com.laamella.kode_state_machine.util.SimpleState.A
 import com.laamella.kode_state_machine.util.SimpleState.B
 import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 internal class PriorityTests {
@@ -31,7 +32,7 @@ internal class PriorityTests {
         }.build()
 
         machine.poll()
-        Assertions.assertEquals("H", trace.toString())
+        assertEquals("H", trace.toString())
     }
 
     @Test
@@ -44,7 +45,7 @@ internal class PriorityTests {
         }.build()
 
         machine.poll()
-        Assertions.assertEquals("NN", trace.toString())
+        assertEquals("NN", trace.toString())
     }
 
     @Test
@@ -56,6 +57,6 @@ internal class PriorityTests {
         }.build()
 
         machine.poll()
-        Assertions.assertEquals("HH", trace.toString())
+        assertEquals("HH", trace.toString())
     }
 }

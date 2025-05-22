@@ -1,5 +1,9 @@
 package com.laamella.kode_state_machine
 
+import com.laamella.kode_state_machine.condition.AfterCondition
+import com.laamella.kode_state_machine.condition.AlwaysCondition
+import com.laamella.kode_state_machine.condition.NeverCondition
+
 /**
  * A way to define a condition that is met or not.
  *
@@ -24,4 +28,16 @@ interface Condition<E> {
      * transitions that fire after a certain amount of time.
      */
     fun reset()
+}
+
+fun <E> always(): Condition<E> {
+    return AlwaysCondition()
+}
+
+fun <E> never(): Condition<E> {
+    return NeverCondition()
+}
+
+fun <E> after(milliseconds: Long): Condition<E> {
+    return AfterCondition(milliseconds)
 }

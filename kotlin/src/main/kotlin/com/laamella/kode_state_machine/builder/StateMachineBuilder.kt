@@ -1,12 +1,7 @@
 package com.laamella.kode_state_machine.builder
 
-import com.laamella.kode_state_machine.Action
-import com.laamella.kode_state_machine.Condition
-import com.laamella.kode_state_machine.StateMachine
-import com.laamella.kode_state_machine.Transition
-import com.laamella.kode_state_machine.action.LogAction
-import com.laamella.kode_state_machine.action.NoAction
-import com.laamella.kode_state_machine.condition.*
+import com.laamella.kode_state_machine.*
+import com.laamella.kode_state_machine.condition.AlwaysCondition
 import java.util.*
 
 class StateMachineBuilder<T, E, P : Comparable<P>>(private val defaultPriority: P) {
@@ -43,21 +38,44 @@ class StateMachineBuilder<T, E, P : Comparable<P>>(private val defaultPriority: 
     }
 }
 
-class TransitionBuilder<T, E, P : Comparable<P>>(
-    private val to: List<T>,
-    private val condition: Condition<E>,
-    private val action: Action,
-    private val priority: P?
-) {
-    fun build(from: T, defaultPriority: P): List<Transition<T, E, P>> {
-        // TODO listof!
-        return to.map { t ->
+class TransitionBuilder<T, E, P : Comparable<P>>() {
+    val to = mutableListOf<T>()
+    val condition = mutableListOf<Condition<E>>()
+    val action = mutableListOf<Action>()
+    var priority: P? = null
+
+    fun to(vararg destinationStates: T) {
+        to.addAll(destinationStates)
+    }
+
+    fun condition(condition: Condition<E>) {
+        this.condition.add(condition)
+    }
+
+    fun onEvent(event: E) {
+        condition(isEvent(event))
+    }
+
+    fun onEvents(vararg events: E) {
+        condition(isEventOneOf(*events))
+    }
+
+    fun action(action: Action) {
+        this.action.add(action)
+    }
+
+    fun priority(value: P) {
+        this.priority = value
+    }
+
+    fun build(source: T, defaultPriority: P): List<Transition<T, E, P>> {
+        return to.map { destination ->
             Transition(
-                from,
-                t,
-                listOf(condition),
+                source,
+                destination,
+                condition,
                 priority ?: defaultPriority,
-                listOf(action)
+                action
             )
         }
     }
@@ -72,16 +90,21 @@ class StateBuilder<T, E, P : Comparable<P>>(vararg sourceStates: T) {
     private val transitionBuilders = mutableListOf<TransitionBuilder<T, E, P>>()
 
     fun transitionsTo(
-        vararg to: T,
+        to: T,
         condition: Condition<E> = AlwaysCondition(),
         action: Action = NoAction(),
         priority: P? = null
     ) {
-        transitionBuilders.add(TransitionBuilder(to.asList(), condition, action, priority))
+        transition {
+            to(to)
+            condition(condition)
+            action(action)
+            if (priority != null) priority(priority)
+        }
     }
 
-    fun transition(vararg states: T, init: TransitionBuilder<T, E, P> .() -> Unit): TransitionBuilder<T, E, P> {
-        val transitionBuilder = TransitionBuilder<T, E, P>(states.asList(), condition = always(), action = NoAction(), null)
+    fun transition(init: TransitionBuilder<T, E, P> .() -> Unit): TransitionBuilder<T, E, P> {
+        val transitionBuilder = TransitionBuilder<T, E, P>()
         transitionBuilders.add(transitionBuilder)
         transitionBuilder.init()
         return transitionBuilder
@@ -109,32 +132,6 @@ class StateBuilder<T, E, P : Comparable<P>>(vararg sourceStates: T) {
 
     fun onEntry(action: Action) {
         entryEvents.add(action)
-    }
-
-    fun <E> always(): Condition<E> {
-        return AlwaysCondition()
-    }
-
-    fun <E> never(): Condition<E> {
-        return NeverCondition()
-    }
-
-    fun <E> after(milliseconds: Long): Condition<E> {
-        return AfterCondition(milliseconds)
-    }
-
-    fun <E> isEvent(vararg events: E): Condition<E> {
-        assert(events.isNotEmpty())
-
-        if (events.size == 1) {
-            return SingleEventMatchCondition(events[0])
-        }
-
-        return MultiEventMatchCondition(*events)
-    }
-
-    fun log(logText: String): Action {
-        return LogAction(logText)
     }
 
     fun except(vararg states: T) {
