@@ -53,12 +53,12 @@ class LogAction(private val logText: String) : Action {
  * @param E event type.
  */
 // TODO test
-abstract class TaskAction<E> : Runnable, FinishableAction<E> {
+open class TaskAction<E>(task: () -> Unit) : FinishableAction<E> {
     private var finishedCondition: NonEventBasedCondition<E>? = null
 
     override fun execute() {
         // TODO use coroutines
-        val taskThread = Thread(this)
+        val taskThread = Thread()
         finishedCondition = object : NonEventBasedCondition<E>() {
             override val isMet: Boolean
                 get() = taskThread.state == TERMINATED
